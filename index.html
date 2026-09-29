@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="La Cayenne — Hamburguesería artesanal. Carrera 5 este # 2a - 20 sur.">
+  <meta name="theme-color" content="#1c2438">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>La Cayenne — Hamburguesería Artesanal</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="assets/apple-touch.png">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="La Cayenne — Hamburguesería artesanal">
+  <meta property="og:description" content="Hamburguesas hechas con cariño. Carrera 5 este # 2a - 20 sur.">
+  <meta property="og:image" content="assets/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="La Cayenne — Hamburguesería artesanal">
+  <meta name="twitter:description" content="Hamburguesas hechas con cariño. Carrera 5 este # 2a - 20 sur.">
+  <meta name="twitter:image" content="assets/og.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Great+Vibes&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Restaurant",
+    "name": "La Cayenne",
+    "description": "Hamburguesería artesanal",
+    "telephone": "+573184003076",
+    "servesCuisine": "Hamburguesas",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Carrera 5 este # 2a - 20 sur",
+      "addressCountry": "CO"
+    },
+    "openingHoursSpecification": [
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Thursday"],
+        "opens": "15:30",
+        "closes": "22:00"
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Friday", "Saturday", "Sunday"],
+        "opens": "16:30",
+        "closes": "23:00"
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#menu">Ir al menú</a>
+
+  <header class="site-header" id="top">
+    <div class="header-inner">
+      <a href="#top" class="logo" aria-label="La Cayenne inicio">
+        <span class="logo-badge" aria-hidden="true">
+          <svg viewBox="0 0 64 64" width="42" height="42">
+            <circle cx="32" cy="32" r="30" fill="#1c2438" stroke="#f7f3eb" stroke-width="2.5"/>
+            <ellipse cx="32" cy="17" rx="10" ry="4.5" fill="#b8963e"/>
+            <rect x="21" y="20.5" width="22" height="3.5" rx="1.5" fill="#3d5a45"/>
+            <ellipse cx="32" cy="26" rx="11" ry="3" fill="#d4c4a0"/>
+            <rect x="22" y="28.5" width="20" height="3" rx="1" fill="#8b2e2e"/>
+            <ellipse cx="32" cy="34" rx="12" ry="3.5" fill="#b8963e"/>
+          </svg>
+        </span>
+        <span class="logo-text-wrap">
+          <span class="logo-text">LA CAYENNE</span>
+          <span class="logo-script">Hamburguesería artesanal</span>
+        </span>
+      </a>
+      <button class="nav-toggle" id="navToggle" type="button" aria-controls="siteNav" aria-label="Abrir menú" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="site-nav" id="siteNav" aria-label="Principal">
+        <a href="#menu">Menú</a>
+        <a href="#contacto">Contacto</a>
+        <a href="https://wa.me/573184003076" class="nav-cta" target="_blank" rel="noopener noreferrer">Pedir por WhatsApp</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-bg" aria-hidden="true">
+        <picture>
+          <source srcset="assets/hero.webp" type="image/webp">
+          <img class="hero-img" src="assets/hero.jpg" width="1600" height="1200" alt="" fetchpriority="high" decoding="async">
+        </picture>
+        <div class="hero-overlay"></div>
+      </div>
+      <div class="hero-content">
+        <p class="hero-eyebrow">Comida artesanal</p>
+        <h1 id="hero-title">LA CAYENNE</h1>
+        <p class="hero-script">Hamburguesería artesanal</p>
+        <p class="hero-tagline">Hamburguesas hechas con cariño.<br>Pan fresco, carne jugosa y el toque de casa.</p>
+        <div class="hero-actions">
+          <a href="#menu" class="btn btn-primary">Ver menú</a>
+          <a href="https://wa.me/573184003076" class="btn btn-outline" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+        </div>
+      </div>
+      <a href="#menu" class="hero-scroll">
+        <span>Ver menú</span>
+        <span class="scroll-line" aria-hidden="true"></span>
+      </a>
+    </section>
+
+    <section class="menu-section" id="menu" aria-labelledby="menu-title">
+      <div class="section-inner">
+        <header class="section-header">
+          <p class="section-eyebrow">Nuestra carta</p>
+          <h2 id="menu-title">Menú</h2>
+          <p class="section-lead">Precios en pesos. El mostaza es lo que cambia el plato.</p>
+        </header>
+
+        <div class="menu-filters" role="group" aria-label="Categorías del menú">
+          <button type="button" class="filter-btn is-active" aria-pressed="true" data-filter="all">Todo</button>
+          <button type="button" class="filter-btn" aria-pressed="false" data-filter="entradas">Entradas</button>
+          <button type="button" class="filter-btn" aria-pressed="false" data-filter="hamburguesas">Hamburguesas</button>
+          <button type="button" class="filter-btn" aria-pressed="false" data-filter="variar">Para variar</button>
+          <button type="button" class="filter-btn" aria-pressed="false" data-filter="dogs">Dogs</button>
+          <button type="button" class="filter-btn" aria-pressed="false" data-filter="infantil">Infantil</button>
+          <button type="button" class="filter-btn" aria-pressed="false" data-filter="adiciones">Adiciones</button>
+          <button type="button" class="filter-btn" aria-pressed="false" data-filter="bebidas">Bebidas</button>
+        </div>
+
+        <div class="menu-category" data-category="entradas">
+          <h3 class="category-title">Entradas</h3>
+          <div class="menu-grid">
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Papas cheddar</h4>
+                <span class="price">$10.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Salsa cheddar</li>
+                <li class="ing ing-star">Tocineta</li>
+                <li class="ing">Queso</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Yuquitas</h4>
+                <span class="price">$7.000</span>
+              </div>
+            </article>
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Papa francesa</h4>
+                <span class="price">$7.000</span>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="menu-category" data-category="hamburguesas">
+          <h3 class="category-title">Hamburguesas</h3>
+          <p class="category-note">Todas van en pan artesanal, con aritos de cebolla y tomate. Lo mostaza es lo que las hace distintas.</p>
+          <div class="menu-grid">
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Bacon</h4>
+                <span class="price">$14.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Tocineta</li>
+                <li class="ing ing-star">Salsa de la casa</li>
+                <li class="ing">Carne</li>
+                <li class="ing">Queso</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Opita</h4>
+                <span class="price">$16.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Salsa de achira</li>
+                <li class="ing ing-star">Tocineta</li>
+                <li class="ing">Carne</li>
+                <li class="ing">Queso</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Hawaiana</h4>
+                <span class="price">$18.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Piña a la plancha</li>
+                <li class="ing ing-star">Tocineta</li>
+                <li class="ing">Carne</li>
+                <li class="ing">Queso</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Mixta</h4>
+                <span class="price">$22.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Pollo a la plancha</li>
+                <li class="ing ing-star">Salsa de champiñones</li>
+                <li class="ing">Carne de res</li>
+                <li class="ing">Queso</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <span class="badge badge-sold">Más vendida</span>
+              <div class="menu-card-top">
+                <h4>Criolla</h4>
+                <span class="price">$20.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Carne desmechada</li>
+                <li class="ing ing-star">Maíz tierno</li>
+                <li class="ing">Carne de res</li>
+                <li class="ing">Queso</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Doble</h4>
+                <span class="price">$20.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Doble carne</li>
+                <li class="ing ing-star">Doble queso</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Pollo</h4>
+                <span class="price">$16.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Pechuga a la plancha</li>
+                <li class="ing ing-star">Salsa de champiñones</li>
+                <li class="ing">Queso</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <span class="badge badge-sold">Más vendida</span>
+              <div class="menu-card-top">
+                <h4>Ranchera</h4>
+                <span class="price">$20.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Huevo</li>
+                <li class="ing ing-star">Chorizo</li>
+                <li class="ing ing-star">Tocineta</li>
+                <li class="ing">Carne</li>
+                <li class="ing">Queso</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Mexicana</h4>
+                <span class="price">$19.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Guacamole</li>
+                <li class="ing ing-star">Nachos</li>
+                <li class="ing ing-star">Jalapeños</li>
+                <li class="ing">Carne</li>
+                <li class="ing">Queso</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Caribeña</h4>
+                <span class="price">$20.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Carne de cerdo</li>
+                <li class="ing ing-star">Madurito</li>
+                <li class="ing ing-star">Suero costeño</li>
+                <li class="ing">Queso</li>
+              </ul>
+            </article>
+            <article class="menu-card featured">
+              <span class="badge">Especialidad</span>
+              <div class="menu-card-top">
+                <h4>Cayenne</h4>
+                <span class="price">$24.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Doble tocineta</li>
+                <li class="ing ing-star">Salsa de la casa</li>
+                <li class="ing ing-star">Baño de queso fundido</li>
+                <li class="ing">Carne</li>
+                <li class="ing">Queso</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Triple Mixta</h4>
+                <span class="price">$27.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Res, cerdo y pollo</li>
+                <li class="ing ing-star">Triple queso</li>
+                <li class="ing ing-star">Salsa de champiñones</li>
+                <li class="ing ing-star">Salsa de la casa</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+
+        <div class="menu-category" data-category="variar">
+          <h3 class="category-title">Para variar</h3>
+          <div class="menu-grid">
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Mazorcada</h4>
+                <span class="price">$20.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Pechuga</li>
+                <li class="ing ing-star">Maíz tierno</li>
+                <li class="ing">Chorizo</li>
+                <li class="ing">Tocineta</li>
+                <li class="ing">Queso</li>
+                <li class="ing">Papita ripio</li>
+                <li class="ing">Salsa de maíz</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Pataconada</h4>
+                <span class="price">$24.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Patacón</li>
+                <li class="ing">Chorizo</li>
+                <li class="ing">Pechuga</li>
+                <li class="ing">Carne desmechada</li>
+                <li class="ing">Queso fundido</li>
+                <li class="ing">Maíz tierno</li>
+                <li class="ing">Tocineta</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <span class="badge badge-new">Nuevo</span>
+              <div class="menu-card-top">
+                <h4>Mix de Carnes</h4>
+                <span class="price">$26.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">360 g res, cerdo y pechuga</li>
+                <li class="ing">Papa francesa</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Choripapa</h4>
+                <span class="price">$20.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Chorizo</li>
+                <li class="ing">Papa francesa</li>
+                <li class="ing">Queso fundido</li>
+                <li class="ing">Maíz tierno</li>
+                <li class="ing">Tocineta</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <span class="badge badge-sold">Más vendida</span>
+              <div class="menu-card-top">
+                <h4>Choripapa Mega</h4>
+                <span class="price">$24.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Pechuga</li>
+                <li class="ing ing-star">Carne desmechada</li>
+                <li class="ing">Chorizo</li>
+                <li class="ing">Papa francesa</li>
+                <li class="ing">Queso fundido</li>
+                <li class="ing">Maíz tierno</li>
+                <li class="ing">Tocineta</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Alitas</h4>
+                <span class="price">$22.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">500 g</li>
+                <li class="ing ing-star">BBQ de guayaba o miel mostaza</li>
+                <li class="ing">Papa francesa</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+
+        <div class="menu-category" data-category="dogs">
+          <h3 class="category-title">Dogs y Super Dogs</h3>
+          <p class="category-note">Van en pan artesanal. Mostaza: lo que cambia entre uno y otro.</p>
+          <div class="menu-grid">
+            <article class="menu-card featured">
+              <div class="menu-card-top">
+                <h4>Perro Ranchero 45 cm</h4>
+                <span class="price">$45.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">45 cm</li>
+                <li class="ing ing-star">Cerditos</li>
+                <li class="ing ing-star">Carne desmechada</li>
+                <li class="ing ing-star">Queso fundido</li>
+                <li class="ing">Chorizo o salchicha</li>
+                <li class="ing">Papita ripio</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Perro Sencillo</h4>
+                <span class="price">$14.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Jamón</li>
+                <li class="ing ing-star">Tocineta</li>
+                <li class="ing">Chorizo o salchicha</li>
+                <li class="ing">Queso</li>
+                <li class="ing">Papita ripio</li>
+              </ul>
+            </article>
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Perro Criollo Personal</h4>
+                <span class="price">$17.000</span>
+              </div>
+              <ul class="ings">
+                <li class="ing ing-star">Carne desmechada</li>
+                <li class="ing ing-star">Tocineta</li>
+                <li class="ing">Chorizo o salchicha</li>
+                <li class="ing">Queso</li>
+                <li class="ing">Papita ripio</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+
+        <div class="menu-category" data-category="infantil">
+          <h3 class="category-title">Menú infantil</h3>
+          <div class="menu-grid">
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Nuggets de pollo</h4>
+                <span class="price">$14.000</span>
+              </div>
+            </article>
+            <article class="menu-card">
+              <div class="menu-card-top">
+                <h4>Salchipapita</h4>
+                <span class="price">$14.000</span>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="menu-category" data-category="adiciones">
+          <h3 class="category-title">Adiciones</h3>
+          <div class="adiciones-row">
+            <span class="adicion"><strong>Carne</strong> $7.000</span>
+            <span class="adicion"><strong>Huevo</strong> $3.000</span>
+            <span class="adicion"><strong>Tocineta</strong> $3.000</span>
+            <span class="adicion"><strong>Baño de queso</strong> $7.000</span>
+            <span class="adicion"><strong>Patacón</strong> $3.000</span>
+          </div>
+        </div>
+
+        <div class="menu-category" data-category="bebidas">
+          <h3 class="category-title">Bebidas</h3>
+          <div class="drink-board">
+            <section class="drink-group">
+              <header class="drink-head">
+                <h4>Jugos naturales</h4>
+                <p class="drink-prices">
+                  <span>Agua <strong>$7.000</strong></span>
+                  <span>Leche <strong>$8.000</strong></span>
+                </p>
+              </header>
+              <ul class="flavor-list">
+                <li>Guanábana</li>
+                <li>Mango</li>
+                <li>Cholupa <small>temporada</small></li>
+                <li>Arazá <small>temporada</small></li>
+                <li>Mora</li>
+                <li>Maracuyá</li>
+                <li>Limonada natural</li>
+                <li>Fresa</li>
+                <li>Limonada de panela</li>
+              </ul>
+              <p class="flavor-special">
+                <span class="flavor-special-name">Frutos rojos</span>
+                <span class="flavor-special-note">Endulzado con miel</span>
+                <span class="price">$9.000</span>
+              </p>
+            </section>
+
+            <section class="drink-group">
+              <header class="drink-head">
+                <h4>Limonadas</h4>
+                <p class="drink-prices"><span><strong>$10.000</strong></span></p>
+              </header>
+              <ul class="flavor-list">
+                <li>Cerezada</li>
+                <li>Hierbabuena</li>
+                <li>Coco</li>
+              </ul>
+            </section>
+
+            <section class="drink-group" aria-labelledby="drink-individual">
+              <header class="drink-head">
+                <h4 id="drink-individual">Individuales</h4>
+              </header>
+              <ul class="drink-rows">
+                <li><span>Gaseosa personal</span><span class="price">$4.000</span></li>
+              </ul>
+            </section>
+
+            <section class="drink-group" aria-labelledby="drink-share">
+              <header class="drink-head">
+                <h4 id="drink-share">Para compartir</h4>
+              </header>
+              <ul class="drink-rows">
+                <li><span>Jarra jugo agua</span><span class="price">$16.000</span></li>
+                <li><span>Jarra jugo leche</span><span class="price">$20.000</span></li>
+                <li><span>Jarra limonadas</span><span class="price">$22.000</span></li>
+                <li><span>Gaseosa familiar 1.5 L</span><span class="price">$8.000</span></li>
+                <li><span>Jugo Hit familiar</span><span class="price">$8.000</span></li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="contacto-section" id="contacto" aria-labelledby="contacto-title">
+      <div class="section-inner contacto-grid">
+        <div class="contacto-info">
+          <p class="section-eyebrow">Te esperamos</p>
+          <h2 id="contacto-title">Contacto</h2>
+          <p class="section-lead">Pide por WhatsApp o visítanos. Estamos listos para atenderte.</p>
+
+          <ul class="contacto-list">
+            <li>
+              <span class="contacto-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 21s-7-5.5-7-11a7 7 0 1 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+              </span>
+              <div>
+                <strong>Dirección</strong>
+                <p><a href="https://www.google.com/maps/search/?api=1&amp;query=La+Cayenne+Carrera+5+este+%232a+-+20+sur" target="_blank" rel="noopener noreferrer">Carrera 5 este # 2a - 20 sur</a></p>
+              </div>
+            </li>
+            <li>
+              <span class="contacto-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h2.1c.6 0 1.1.4 1.3 1l1 3.2a1.4 1.4 0 0 1-.4 1.5L8.8 10.4a12 12 0 0 0 4.8 4.8l1.7-1.7a1.4 1.4 0 0 1 1.5-.4l3.2 1c.6.2 1 .7 1 1.3v2.1A2.5 2.5 0 0 1 17.5 20 14.5 14.5 0 0 1 4 6.5z"/></svg>
+              </span>
+              <div>
+                <strong>WhatsApp</strong>
+                <p><a href="https://wa.me/573184003076" target="_blank" rel="noopener noreferrer">318 400 3076</a></p>
+              </div>
+            </li>
+          </ul>
+
+          <a href="https://wa.me/573184003076?text=Hola%2C%20quiero%20hacer%20un%20pedido%20en%20La%20Cayenne" class="btn btn-primary btn-wa" target="_blank" rel="noopener noreferrer">
+            Escribir por WhatsApp
+          </a>
+        </div>
+
+        <aside class="contacto-card">
+          <p class="card-kicker">En cocina</p>
+          <p class="card-brand">LA CAYENNE</p>
+          <p class="card-script">Hamburguesería artesanal</p>
+          <div class="card-divider"></div>
+          <p class="ticket-label">Horarios</p>
+          <ul class="horarios">
+            <li><span>Lun · Mar · Jue</span><span>3:30 p.m. – 10:00 p.m.</span></li>
+            <li><span>Vie · Sáb · Dom</span><span>4:30 p.m. – 11:00 p.m.</span></li>
+          </ul>
+          <p class="ticket-closed">Cerramos los miércoles</p>
+          <p class="card-wa">318 400 3076</p>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p class="footer-brand">LA CAYENNE <span class="footer-script">Hamburguesería artesanal</span></p>
+      <p class="footer-copy">Carrera 5 este # 2a - 20 sur · &copy; <span id="year"></span> La Cayenne</p>
+      <a href="#top" class="footer-top">Volver arriba</a>
+    </div>
+  </footer>
+
+  <a href="https://wa.me/573184003076" class="wa-float" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+    <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  </a>
+
+  <script src="script.js"></script>
+</body>
+</html>
