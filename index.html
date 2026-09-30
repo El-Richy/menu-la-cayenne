@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="La Cayenne — Hamburguesería artesanal. Carrera 5 este # 2a - 20 sur.">
-  <meta name="theme-color" content="#1c2438">
+  <meta name="theme-color" content="#121a2c">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>La Cayenne — Hamburguesería Artesanal</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
@@ -60,12 +60,12 @@
       <a href="#top" class="logo" aria-label="La Cayenne inicio">
         <span class="logo-badge" aria-hidden="true">
           <svg viewBox="0 0 64 64" width="42" height="42">
-            <circle cx="32" cy="32" r="30" fill="#1c2438" stroke="#f7f3eb" stroke-width="2.5"/>
-            <ellipse cx="32" cy="17" rx="10" ry="4.5" fill="#b8963e"/>
+            <circle cx="32" cy="32" r="30" fill="#121a2c" stroke="#f3e6d0" stroke-width="2.5"/>
+            <ellipse cx="32" cy="17" rx="10" ry="4.5" fill="#c9a227"/>
             <rect x="21" y="20.5" width="22" height="3.5" rx="1.5" fill="#3d5a45"/>
-            <ellipse cx="32" cy="26" rx="11" ry="3" fill="#d4c4a0"/>
-            <rect x="22" y="28.5" width="20" height="3" rx="1" fill="#8b2e2e"/>
-            <ellipse cx="32" cy="34" rx="12" ry="3.5" fill="#b8963e"/>
+            <ellipse cx="32" cy="26" rx="11" ry="3" fill="#e8d4b0"/>
+            <rect x="22" y="28.5" width="20" height="3" rx="1" fill="#c42c28"/>
+            <ellipse cx="32" cy="34" rx="12" ry="3.5" fill="#c9a227"/>
           </svg>
         </span>
         <span class="logo-text-wrap">
@@ -78,6 +78,7 @@
       </button>
       <nav class="site-nav" id="siteNav" aria-label="Principal">
         <a href="#menu">Menú</a>
+        <a href="#local">El local</a>
         <a href="#contacto">Contacto</a>
         <a href="https://wa.me/573184003076" class="nav-cta" target="_blank" rel="noopener noreferrer">Pedir por WhatsApp</a>
       </nav>
@@ -97,6 +98,7 @@
         <p class="hero-eyebrow">Comida artesanal</p>
         <h1 id="hero-title">LA CAYENNE</h1>
         <p class="hero-script">Hamburguesería artesanal</p>
+        <span class="hero-rule" aria-hidden="true"></span>
         <p class="hero-tagline">Hamburguesas hechas con cariño.<br>Pan fresco, carne jugosa y el toque de casa.</p>
         <div class="hero-actions">
           <a href="#menu" class="btn btn-primary">Ver menú</a>
@@ -109,6 +111,26 @@
       </a>
     </section>
 
+    <section class="highlights" aria-label="Nuestra cocina">
+      <div class="section-inner highlights-grid">
+        <article class="highlight-card">
+          <span class="highlight-mark" aria-hidden="true">01</span>
+          <h3>Pan artesanal</h3>
+          <p>Fresco y dorado. El mismo pan en hamburguesas y perros.</p>
+        </article>
+        <article class="highlight-card">
+          <span class="highlight-mark" aria-hidden="true">02</span>
+          <h3>Salsa de la casa</h3>
+          <p>El toque mostaza. Lo que cambia cada plato de la carta.</p>
+        </article>
+        <article class="highlight-card">
+          <span class="highlight-mark" aria-hidden="true">03</span>
+          <h3>Hecho al momento</h3>
+          <p>Carne jugosa, luz cálida y el neón rojo del local.</p>
+        </article>
+      </div>
+    </section>
+
     <section class="menu-section" id="menu" aria-labelledby="menu-title">
       <div class="section-inner">
         <header class="section-header">
@@ -116,6 +138,13 @@
           <h2 id="menu-title">Menú</h2>
           <p class="section-lead">Precios en pesos. El mostaza es lo que cambia el plato.</p>
         </header>
+
+        <ul class="clasicos" aria-label="Los más pedidos">
+          <li><a href="#plato-criolla">Criolla</a></li>
+          <li><a href="#plato-ranchera">Ranchera</a></li>
+          <li><a href="#plato-cayenne">Cayenne</a></li>
+          <li><a href="#plato-choripapa-mega">Choripapa Mega</a></li>
+        </ul>
 
         <div class="menu-filters" role="group" aria-label="Categorías del menú">
           <button type="button" class="filter-btn is-active" aria-pressed="true" data-filter="all">Todo</button>
@@ -209,7 +238,7 @@
                 <li class="ing">Queso</li>
               </ul>
             </article>
-            <article class="menu-card">
+            <article class="menu-card" id="plato-criolla">
               <span class="badge badge-sold">Más vendida</span>
               <div class="menu-card-top">
                 <h4>Criolla</h4>
@@ -243,7 +272,7 @@
                 <li class="ing">Queso</li>
               </ul>
             </article>
-            <article class="menu-card">
+            <article class="menu-card" id="plato-ranchera">
               <span class="badge badge-sold">Más vendida</span>
               <div class="menu-card-top">
                 <h4>Ranchera</h4>
@@ -282,7 +311,7 @@
                 <li class="ing">Queso</li>
               </ul>
             </article>
-            <article class="menu-card featured">
+            <article class="menu-card featured" id="plato-cayenne">
               <span class="badge">Especialidad</span>
               <div class="menu-card-top">
                 <h4>Cayenne</h4>
@@ -368,7 +397,7 @@
                 <li class="ing">Tocineta</li>
               </ul>
             </article>
-            <article class="menu-card">
+            <article class="menu-card" id="plato-choripapa-mega">
               <span class="badge badge-sold">Más vendida</span>
               <div class="menu-card-top">
                 <h4>Choripapa Mega</h4>
@@ -537,6 +566,38 @@
               </ul>
             </section>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="local-section" id="local" aria-labelledby="local-title">
+      <div class="section-inner local-grid">
+        <div class="local-frame">
+          <picture>
+            <source srcset="assets/hero.webp" type="image/webp">
+            <img src="assets/hero.jpg" width="1600" height="1200" alt="Interior de La Cayenne: mesas de madera, sillas rojas y neón" loading="lazy" decoding="async">
+          </picture>
+          <span class="local-corners" aria-hidden="true"></span>
+        </div>
+        <div class="local-copy">
+          <p class="section-eyebrow">El espacio</p>
+          <h2 id="local-title">El local</h2>
+          <p class="section-lead">Luz de lámpara, mesas de madera y el neón rojo. Un rincón para sentarse y pedir sin prisa.</p>
+          <ul class="local-facts">
+            <li>
+              <strong>Ambiente</strong>
+              <span>Paredes oscuras, sillas rojas y cocina a la vista.</span>
+            </li>
+            <li>
+              <strong>En mesa</strong>
+              <span>Hamburguesas, perros, alitas y jugos naturales.</span>
+            </li>
+            <li>
+              <strong>Miércoles</strong>
+              <span>Cerramos. El resto de la semana, te esperamos.</span>
+            </li>
+          </ul>
+          <a href="#contacto" class="btn btn-primary">Cómo llegar</a>
         </div>
       </div>
     </section>

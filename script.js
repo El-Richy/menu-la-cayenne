@@ -41,6 +41,17 @@
     });
   }
 
+  var canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  if (canHover) {
+    document.querySelectorAll(".menu-card, .highlight-card, .contacto-card").forEach(function (card) {
+      card.addEventListener("pointermove", function (event) {
+        var rect = card.getBoundingClientRect();
+        card.style.setProperty("--mouse-x", event.clientX - rect.left + "px");
+        card.style.setProperty("--mouse-y", event.clientY - rect.top + "px");
+      });
+    });
+  }
+
   var filters = document.querySelectorAll(".filter-btn");
   var categories = document.querySelectorAll(".menu-category");
 
@@ -60,6 +71,13 @@
         var show = filter === "all" || catName === filter;
         cat.classList.toggle("is-hidden", !show);
       });
+    });
+  });
+
+  var allFilter = document.querySelector('.filter-btn[data-filter="all"]');
+  document.querySelectorAll(".clasicos a").forEach(function (link) {
+    link.addEventListener("click", function () {
+      if (allFilter && !allFilter.classList.contains("is-active")) allFilter.click();
     });
   });
 })();
