@@ -1,6 +1,9 @@
 (function () {
   "use strict";
 
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  var finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+
   var yearEl = document.getElementById("year");
   if (yearEl) yearEl.textContent = String(new Date().getFullYear());
 
@@ -41,19 +44,36 @@
     });
   }
 
-  var canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-  if (canHover) {
-    document.querySelectorAll(".menu-card, .highlight-card, .contacto-card").forEach(function (card) {
-      card.addEventListener("pointermove", function (event) {
-        var rect = card.getBoundingClientRect();
-        card.style.setProperty("--mouse-x", event.clientX - rect.left + "px");
-        card.style.setProperty("--mouse-y", event.clientY - rect.top + "px");
-      });
+  var stagger = document.querySelector(".t-stagger");
+  if (stagger) {
+    requestAnimationFrame(function () {
+      stagger.classList.add("is-shown");
     });
   }
 
+  var bar = document.querySelector(".menu-filters");
+  var pill = bar ? bar.querySelector(".t-tabs-pill") : null;
   var filters = document.querySelectorAll(".filter-btn");
   var categories = document.querySelectorAll(".menu-category");
+
+  function activeFilter() {
+    return document.querySelector(".filter-btn.is-active") || filters[0];
+  }
+
+  function movePill(tab, animate) {
+    if (!pill || !tab) return;
+    if (!animate) {
+      var prev = pill.style.transition;
+      pill.style.transition = "none";
+      pill.style.transform = "translateX(" + tab.offsetLeft + "px)";
+      pill.style.width = tab.offsetWidth + "px";
+      void pill.offsetWidth;
+      pill.style.transition = prev;
+    } else {
+      pill.style.transform = "translateX(" + tab.offsetLeft + "px)";
+      pill.style.width = tab.offsetWidth + "px";
+    }
+  }
 
   filters.forEach(function (btn) {
     btn.addEventListener("click", function () {
@@ -71,13 +91,64 @@
         var show = filter === "all" || catName === filter;
         cat.classList.toggle("is-hidden", !show);
       });
+
+      movePill(btn, true);
+      btn.scrollIntoView({
+        inline: "center",
+        block: "nearest",
+        behavior: reduceMotion.matches ? "auto" : "smooth"
+      });
     });
   });
 
-  var allFilter = document.querySelector('.filter-btn[data-filter="all"]');
-  document.querySelectorAll(".clasicos a").forEach(function (link) {
-    link.addEventListener("click", function () {
-      if (allFilter && !allFilter.classList.contains("is-active")) allFilter.click();
+  if (bar && pill) {
+    requestAnimationFrame(function () {
+      movePill(activeFilter(), false);
     });
-  });
+    window.addEventListener("resize", function () {
+      movePill(activeFilter(), false);
+    });
+  }
+
+  if (finePointer.matches && !reduceMotion.matches) {
+    document.querySelectorAll(".menu-card, .contacto-card").forEach(function (card) {
+      var wrap = document.createElement("div");
+      wrap.className = "t-tilt";
+      card.parentNode.insertBefore(wrap, card);
+      wrap.appendChild(card);
+      card.classList.add("t-tilt-card");
+
+      var glare = document.createElement("div");
+      glare.className = "t-tilt-glare";
+      glare.setAttribute("aria-hidden", "true");
+      card.appendChild(glare);
+
+      var MAX = 12;
+
+      function reset() {
+        wrap.classList.remove("is-hover");
+        card.classList.remove("is-tilting");
+        card.style.setProperty("--tilt-rx", "0deg");
+        card.style.setProperty("--tilt-ry", "0deg");
+      }
+
+      function track(event) {
+        if (reduceMotion.matches) return;
+        var rect = wrap.getBoundingClientRect();
+        var px = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+        var py = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height));
+        wrap.classList.add("is-hover");
+        card.classList.add("is-tilting");
+        card.style.setProperty("--tilt-ry", ((px - 0.5) * MAX).toFixed(2) + "deg");
+        card.style.setProperty("--tilt-rx", ((0.5 - py) * MAX).toFixed(2) + "deg");
+        card.style.setProperty("--tilt-gx", (px * 100).toFixed(1) + "%");
+        card.style.setProperty("--tilt-gy", (py * 100).toFixed(1) + "%");
+      }
+
+      wrap.addEventListener("pointermove", track);
+      wrap.addEventListener("pointerleave", function (event) {
+        if (event.pointerType === "mouse") reset();
+      });
+    });
+  }
 })();

@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <script>document.documentElement.classList.add("js");</script>
   <meta name="description" content="La Cayenne — Hamburguesería artesanal. Carrera 5 este # 2a - 20 sur.">
   <meta name="theme-color" content="#121a2c">
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -94,13 +95,13 @@
         </picture>
         <div class="hero-overlay"></div>
       </div>
-      <div class="hero-content">
-        <p class="hero-eyebrow">Comida artesanal</p>
-        <h1 id="hero-title">LA CAYENNE</h1>
-        <p class="hero-script">Hamburguesería artesanal</p>
-        <span class="hero-rule" aria-hidden="true"></span>
-        <p class="hero-tagline">Hamburguesas hechas con cariño.<br>Pan fresco, carne jugosa y el toque de casa.</p>
-        <div class="hero-actions">
+      <div class="hero-content t-stagger">
+        <p class="hero-eyebrow t-stagger-line t-stagger-line--1">Comida artesanal</p>
+        <h1 id="hero-title" class="t-stagger-line t-stagger-line--2">LA CAYENNE</h1>
+        <p class="hero-script t-stagger-line t-stagger-line--3">Hamburguesería artesanal</p>
+        <span class="hero-rule t-stagger-line t-stagger-line--4" aria-hidden="true"></span>
+        <p class="hero-tagline t-stagger-line t-stagger-line--5">Hamburguesas hechas con cariño.<br>Pan fresco, carne jugosa y el toque de casa.</p>
+        <div class="hero-actions t-stagger-line t-stagger-line--6">
           <a href="#menu" class="btn btn-primary">Ver menú</a>
           <a href="https://wa.me/573184003076" class="btn btn-outline" target="_blank" rel="noopener noreferrer">WhatsApp</a>
         </div>
@@ -111,50 +112,23 @@
       </a>
     </section>
 
-    <section class="highlights" aria-label="Nuestra cocina">
-      <div class="section-inner highlights-grid">
-        <article class="highlight-card">
-          <span class="highlight-mark" aria-hidden="true">01</span>
-          <h3>Pan artesanal</h3>
-          <p>Fresco y dorado. El mismo pan en hamburguesas y perros.</p>
-        </article>
-        <article class="highlight-card">
-          <span class="highlight-mark" aria-hidden="true">02</span>
-          <h3>Salsa de la casa</h3>
-          <p>El toque mostaza. Lo que cambia cada plato de la carta.</p>
-        </article>
-        <article class="highlight-card">
-          <span class="highlight-mark" aria-hidden="true">03</span>
-          <h3>Hecho al momento</h3>
-          <p>Carne jugosa, luz cálida y el neón rojo del local.</p>
-        </article>
-      </div>
-    </section>
-
     <section class="menu-section" id="menu" aria-labelledby="menu-title">
       <div class="section-inner">
         <header class="section-header">
           <p class="section-eyebrow">Nuestra carta</p>
           <h2 id="menu-title">Menú</h2>
-          <p class="section-lead">Precios en pesos. El mostaza es lo que cambia el plato.</p>
         </header>
 
-        <ul class="clasicos" aria-label="Los más pedidos">
-          <li><a href="#plato-criolla">Criolla</a></li>
-          <li><a href="#plato-ranchera">Ranchera</a></li>
-          <li><a href="#plato-cayenne">Cayenne</a></li>
-          <li><a href="#plato-choripapa-mega">Choripapa Mega</a></li>
-        </ul>
-
-        <div class="menu-filters" role="group" aria-label="Categorías del menú">
-          <button type="button" class="filter-btn is-active" aria-pressed="true" data-filter="all">Todo</button>
-          <button type="button" class="filter-btn" aria-pressed="false" data-filter="entradas">Entradas</button>
-          <button type="button" class="filter-btn" aria-pressed="false" data-filter="hamburguesas">Hamburguesas</button>
-          <button type="button" class="filter-btn" aria-pressed="false" data-filter="variar">Para variar</button>
-          <button type="button" class="filter-btn" aria-pressed="false" data-filter="dogs">Dogs</button>
-          <button type="button" class="filter-btn" aria-pressed="false" data-filter="infantil">Infantil</button>
-          <button type="button" class="filter-btn" aria-pressed="false" data-filter="adiciones">Adiciones</button>
-          <button type="button" class="filter-btn" aria-pressed="false" data-filter="bebidas">Bebidas</button>
+        <div class="menu-filters t-tabs" role="group" aria-label="Categorías del menú">
+          <span class="t-tabs-pill" aria-hidden="true"></span>
+          <button type="button" class="filter-btn t-tab is-active" aria-pressed="true" data-filter="all">Todo</button>
+          <button type="button" class="filter-btn t-tab" aria-pressed="false" data-filter="entradas">Entradas</button>
+          <button type="button" class="filter-btn t-tab" aria-pressed="false" data-filter="hamburguesas">Hamburguesas</button>
+          <button type="button" class="filter-btn t-tab" aria-pressed="false" data-filter="variar">Para variar</button>
+          <button type="button" class="filter-btn t-tab" aria-pressed="false" data-filter="dogs">Dogs</button>
+          <button type="button" class="filter-btn t-tab" aria-pressed="false" data-filter="infantil">Infantil</button>
+          <button type="button" class="filter-btn t-tab" aria-pressed="false" data-filter="adiciones">Adiciones</button>
+          <button type="button" class="filter-btn t-tab" aria-pressed="false" data-filter="bebidas">Bebidas</button>
         </div>
 
         <div class="menu-category" data-category="entradas">
@@ -188,7 +162,7 @@
 
         <div class="menu-category" data-category="hamburguesas">
           <h3 class="category-title">Hamburguesas</h3>
-          <p class="category-note">Todas van en pan artesanal, con aritos de cebolla y tomate. Lo mostaza es lo que las hace distintas.</p>
+          <p class="category-note">Todas van en pan artesanal, con aritos de cebolla y tomate.</p>
           <div class="menu-grid">
             <article class="menu-card">
               <div class="menu-card-top">
@@ -429,7 +403,7 @@
 
         <div class="menu-category" data-category="dogs">
           <h3 class="category-title">Dogs y Super Dogs</h3>
-          <p class="category-note">Van en pan artesanal. Mostaza: lo que cambia entre uno y otro.</p>
+          <p class="category-note">Van en pan artesanal.</p>
           <div class="menu-grid">
             <article class="menu-card featured">
               <div class="menu-card-top">
@@ -575,28 +549,14 @@
         <div class="local-frame">
           <picture>
             <source srcset="assets/hero.webp" type="image/webp">
-            <img src="assets/hero.jpg" width="1600" height="1200" alt="Interior de La Cayenne: mesas de madera, sillas rojas y neón" loading="lazy" decoding="async">
+            <img src="assets/hero.jpg" width="1600" height="1200" alt="Interior de La Cayenne" loading="lazy" decoding="async">
           </picture>
           <span class="local-corners" aria-hidden="true"></span>
         </div>
         <div class="local-copy">
-          <p class="section-eyebrow">El espacio</p>
+          <p class="section-eyebrow">Visítanos</p>
           <h2 id="local-title">El local</h2>
-          <p class="section-lead">Luz de lámpara, mesas de madera y el neón rojo. Un rincón para sentarse y pedir sin prisa.</p>
-          <ul class="local-facts">
-            <li>
-              <strong>Ambiente</strong>
-              <span>Paredes oscuras, sillas rojas y cocina a la vista.</span>
-            </li>
-            <li>
-              <strong>En mesa</strong>
-              <span>Hamburguesas, perros, alitas y jugos naturales.</span>
-            </li>
-            <li>
-              <strong>Miércoles</strong>
-              <span>Cerramos. El resto de la semana, te esperamos.</span>
-            </li>
-          </ul>
+          <p class="section-lead">Carrera 5 este # 2a - 20 sur. Cerramos los miércoles.</p>
           <a href="#contacto" class="btn btn-primary">Cómo llegar</a>
         </div>
       </div>
