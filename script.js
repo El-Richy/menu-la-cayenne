@@ -151,4 +151,127 @@
       });
     });
   }
+
+  if (!reduceMotion.matches) {
+    requestAnimationFrame(startAtmosphere);
+  }
+
+  function startAtmosphere() {
+    var host = document.getElementById("atmosphere");
+    if (!host) return;
+
+    var canvas = document.createElement("canvas");
+    host.appendChild(canvas);
+    var ctx = canvas.getContext("2d", { alpha: true, desynchronized: true });
+    if (!ctx) return;
+
+    var mobile = window.innerWidth <= 768;
+    var count = mobile ? 14 : 42;
+    var linkDist = mobile ? 0 : 110;
+    var grabDist = mobile || !finePointer.matches ? 0 : 120;
+    var particles = [];
+    var w = 0;
+    var h = 0;
+    var raf = 0;
+    var mx = -9999;
+    var my = -9999;
+
+    function resize() {
+      var dpr = mobile ? 1 : Math.min(window.devicePixelRatio || 1, 1.5);
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    var i;
+    for (i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * (window.innerWidth || 1),
+        y: Math.random() * (window.innerHeight || 1),
+        vx: (Math.random() - 0.5) * 0.22,
+        vy: -0.12 - Math.random() * 0.28,
+        r: 1 + Math.random() * 1.8,
+        cayenne: Math.random() > 0.82
+      });
+    }
+
+    function tick() {
+      ctx.clearRect(0, 0, w, h);
+
+      for (i = 0; i < particles.length; i++) {
+        var p = particles[i];
+        p.x += p.vx + Math.sin((p.y + i) * 0.008) * 0.12;
+        p.y += p.vy;
+        if (p.y < -8) {
+          p.y = h + 8;
+          p.x = Math.random() * w;
+        }
+        if (p.x < -8) p.x = w + 8;
+        if (p.x > w + 8) p.x = -8;
+
+        if (linkDist) {
+          var j;
+          for (j = i + 1; j < particles.length; j++) {
+            var q = particles[j];
+            var dx = p.x - q.x;
+            var dy = p.y - q.y;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < linkDist) {
+              ctx.strokeStyle = "rgba(201, 162, 39, " + (1 - dist / linkDist) * 0.18 + ")";
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(q.x, q.y);
+              ctx.stroke();
+            }
+          }
+        }
+
+        if (grabDist) {
+          var gx = p.x - mx;
+          var gy = p.y - my;
+          var gd = Math.hypot(gx, gy);
+          if (gd < grabDist) {
+            ctx.strokeStyle = "rgba(201, 162, 39, " + (1 - gd / grabDist) * 0.16 + ")";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(mx, my);
+            ctx.stroke();
+          }
+        }
+
+        ctx.fillStyle = p.cayenne ? "rgba(196, 44, 40, 0.45)" : "rgba(201, 162, 39, 0.55)";
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      raf = requestAnimationFrame(tick);
+    }
+
+    resize();
+    tick();
+    window.addEventListener("resize", resize, { passive: true });
+
+    if (grabDist) {
+      window.addEventListener("pointermove", function (event) {
+        mx = event.clientX;
+        my = event.clientY;
+      }, { passive: true });
+    }
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      } else if (!raf) {
+        raf = requestAnimationFrame(tick);
+      }
+    });
+  }
 })();

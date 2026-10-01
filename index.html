@@ -8,8 +8,9 @@
   <meta name="theme-color" content="#121a2c">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>La Cayenne — Hamburguesería Artesanal</title>
-  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/favicon.png" type="image/png" sizes="512x512">
   <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch.png">
   <meta property="og:type" content="website">
   <meta property="og:title" content="La Cayenne — Hamburguesería artesanal">
@@ -54,21 +55,12 @@
   </script>
 </head>
 <body>
+  <div id="atmosphere" aria-hidden="true"></div>
   <a class="skip-link" href="#menu">Ir al menú</a>
 
   <header class="site-header" id="top">
     <div class="header-inner">
       <a href="#top" class="logo" aria-label="La Cayenne inicio">
-        <span class="logo-badge" aria-hidden="true">
-          <svg viewBox="0 0 64 64" width="42" height="42">
-            <circle cx="32" cy="32" r="30" fill="#121a2c" stroke="#f3e6d0" stroke-width="2.5"/>
-            <ellipse cx="32" cy="17" rx="10" ry="4.5" fill="#c9a227"/>
-            <rect x="21" y="20.5" width="22" height="3.5" rx="1.5" fill="#3d5a45"/>
-            <ellipse cx="32" cy="26" rx="11" ry="3" fill="#e8d4b0"/>
-            <rect x="22" y="28.5" width="20" height="3" rx="1" fill="#c42c28"/>
-            <ellipse cx="32" cy="34" rx="12" ry="3.5" fill="#c9a227"/>
-          </svg>
-        </span>
         <span class="logo-text-wrap">
           <span class="logo-text">LA CAYENNE</span>
           <span class="logo-script">Hamburguesería artesanal</span>
@@ -79,7 +71,6 @@
       </button>
       <nav class="site-nav" id="siteNav" aria-label="Principal">
         <a href="#menu">Menú</a>
-        <a href="#local">El local</a>
         <a href="#contacto">Contacto</a>
         <a href="https://wa.me/573184003076" class="nav-cta" target="_blank" rel="noopener noreferrer">Pedir por WhatsApp</a>
       </nav>
@@ -540,24 +531,6 @@
               </ul>
             </section>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="local-section" id="local" aria-labelledby="local-title">
-      <div class="section-inner local-grid">
-        <div class="local-frame">
-          <picture>
-            <source srcset="assets/hero.webp" type="image/webp">
-            <img src="assets/hero.jpg" width="1600" height="1200" alt="Interior de La Cayenne" loading="lazy" decoding="async">
-          </picture>
-          <span class="local-corners" aria-hidden="true"></span>
-        </div>
-        <div class="local-copy">
-          <p class="section-eyebrow">Visítanos</p>
-          <h2 id="local-title">El local</h2>
-          <p class="section-lead">Carrera 5 este # 2a - 20 sur. Cerramos los miércoles.</p>
-          <a href="#contacto" class="btn btn-primary">Cómo llegar</a>
         </div>
       </div>
     </section>

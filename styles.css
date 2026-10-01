@@ -76,12 +76,33 @@ body {
   font-weight: 400;
   color: var(--ink);
   background:
-    radial-gradient(ellipse at 50% -10%, rgba(var(--gold-rgb), 0.16) 0%, transparent 42%),
-    radial-gradient(ellipse at 100% 80%, rgba(var(--cayenne-rgb), 0.06) 0%, transparent 36%),
+    radial-gradient(ellipse 80% 50% at 50% -8%, rgba(var(--gold-rgb), 0.22) 0%, transparent 46%),
+    radial-gradient(ellipse 70% 45% at 92% 78%, rgba(var(--cayenne-rgb), 0.09) 0%, transparent 42%),
+    radial-gradient(ellipse 50% 40% at 8% 60%, rgba(var(--gold-rgb), 0.08) 0%, transparent 48%),
     var(--cream);
+  background-size: 140% 140%, 160% 160%, 150% 150%, auto;
+  animation: drift-glow 22s var(--ease-in-out) infinite;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.01em;
+}
+
+@keyframes drift-glow {
+  0%, 100% { background-position: 50% 0%, 100% 80%, 0% 55%, 0 0; }
+  50% { background-position: 38% 18%, 78% 62%, 18% 70%, 0 0; }
+}
+
+#atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+#atmosphere canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 body.nav-open {
@@ -93,13 +114,8 @@ body.nav-open {
   position: relative;
 }
 
-.local-section {
-  position: relative;
-}
-
 .menu-section::after,
-.contacto-section::after,
-.local-section::after {
+.contacto-section::after {
   content: "";
   pointer-events: none;
   position: absolute;
@@ -140,6 +156,8 @@ button {
 .skip-link:focus {
   top: 1rem;
 }
+
+main { position: relative; z-index: 1; }
 
 .site-header {
   position: sticky;
@@ -182,16 +200,7 @@ button {
 .logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
 }
-
-.logo-badge {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-}
-
-.logo-badge svg { display: block; }
 
 .logo-text-wrap {
   display: flex;
@@ -488,7 +497,7 @@ button {
 
 .menu-section {
   padding: 5.5rem 0 6rem;
-  background: var(--cream);
+  background: rgba(246, 237, 217, 0.72);
 }
 
 .menu-filters {
@@ -869,71 +878,9 @@ button {
 
 .drink-rows li:last-child { border-bottom: none; }
 
-.local-section {
-  padding: 5.5rem 0 6rem;
-  background:
-    radial-gradient(ellipse at 20% 40%, rgba(var(--gold-rgb), 0.1) 0%, transparent 50%),
-    var(--cream);
-}
-
-.local-grid {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 3.5rem;
-  align-items: center;
-}
-
-.local-frame {
-  position: relative;
-  border-radius: 18px;
-  overflow: hidden;
-  box-shadow: var(--shadow-lg);
-  border: 1px solid rgba(var(--gold-rgb), 0.45);
-}
-
-.local-frame img {
-  width: 100%;
-  height: 100%;
-  min-height: 340px;
-  object-fit: cover;
-  object-position: center 45%;
-  filter: saturate(1.05) contrast(1.05);
-}
-
-.local-frame::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 50% 20%, rgba(var(--gold-rgb), 0.18), transparent 50%),
-    linear-gradient(180deg, transparent 55%, rgba(12, 19, 34, 0.45) 100%);
-  pointer-events: none;
-}
-
-.local-corners {
-  position: absolute;
-  inset: 12px;
-  z-index: 1;
-  pointer-events: none;
-  border: 1px solid rgba(228, 197, 106, 0.45);
-  border-radius: 10px;
-  box-shadow: 0 0 0 1px rgba(196, 44, 40, 0.18) inset;
-}
-
-.local-copy .btn { margin-top: 1.75rem; }
-
-.local-copy h2 {
-  font-family: var(--font-display);
-  font-size: clamp(2.4rem, 5.5vw, 3.5rem);
-  font-weight: 600;
-  color: var(--navy);
-  margin-bottom: 0.85rem;
-  line-height: 1.1;
-}
-
 .contacto-section {
   padding: 5.5rem 0 6rem;
-  background: var(--cream-warm);
+  background: rgba(234, 217, 188, 0.7);
 }
 
 .contacto-grid {
@@ -1117,6 +1064,8 @@ button {
 }
 
 .site-footer {
+  position: relative;
+  z-index: 1;
   background: var(--navy-deep);
   color: rgba(247, 243, 235, 0.5);
   padding: 2.25rem 1.5rem;
@@ -1266,8 +1215,7 @@ html:not(.js) .t-stagger-line {
 
 @media (max-width: 860px) {
   .contacto-grid,
-  .drink-board,
-  .local-grid {
+  .drink-board {
     grid-template-columns: 1fr;
     gap: 2.75rem;
   }
@@ -1345,10 +1293,7 @@ html:not(.js) .t-stagger-line {
 
   .hero-tagline { margin-bottom: 1.5rem; font-size: 0.98rem; }
 
-  .local-frame img { min-height: 220px; }
-
   .menu-section,
-  .local-section,
   .contacto-section {
     padding: 3.25rem 0 3.75rem;
   }
@@ -1407,6 +1352,7 @@ html:not(.js) .t-stagger-line {
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  body { animation: none; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
