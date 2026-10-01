@@ -231,31 +231,41 @@
     });
   }
 
-  /* Mascota: camina con el scroll (lerp + rAF) */
+  /* Mascota escaladora: baja con el scroll (lerp + rAF, mobile-first) */
   (function initMascota() {
     var el = document.getElementById("mascota");
     if (!el) return;
 
+    var img = el.querySelector("img");
+
+    /* prefers-reduced-motion: fija, sin animación */
     if (reduceMotion.matches) {
-      el.hidden = true;
+      el.classList.add("is-static");
       return;
     }
 
+    var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    var cores = navigator.hardwareConcurrency || 8;
+    var hoverNone = window.matchMedia("(hover: none)").matches;
+    /* Modo simple: save-data, CPU baja, o touch+CPU limitada → solo translate Y */
+    var simple =
+      !!(conn && conn.saveData) ||
+      cores <= 4 ||
+      (hoverNone && cores <= 6);
+
+    if (simple) el.classList.add("is-simple");
+
     var targetX = 0;
+    var targetY = 0;
     var currentX = 0;
     var currentY = 0;
     var facing = 1;
-    var lastTarget = 0;
     var raf = 0;
-    var bobPhase = 0;
-    var LERP = 0.12;
-    var BOB_AMP = 3.5;
-    var BOB_SPEED = 0.085;
-    var EDGE_PAD = 12;
-
-    function maxTravel() {
-      return Math.max(0, window.innerWidth - el.offsetWidth - EDGE_PAD * 2);
-    }
+    var scrollQueued = false;
+    var LERP = simple ? 0.16 : 0.12;
+    var STEPS = hoverNone ? 6 : 8;
+    var HOP_AMP = simple ? 0 : (hoverNone ? 6 : 8);
+    var L = null;
 
     function scrollProgress() {
       var doc = document.documentElement;
@@ -263,46 +273,93 @@
       return Math.min(1, Math.max(0, window.scrollY / maxScroll));
     }
 
-    function updateTarget() {
-      var next = EDGE_PAD + scrollProgress() * maxTravel();
-      if (Math.abs(next - lastTarget) > 0.5) {
-        facing = next >= lastTarget ? 1 : -1;
-        lastTarget = next;
+    function layout() {
+      var vw = window.innerWidth;
+      var vh = window.innerHeight;
+      var w = el.offsetWidth || 56;
+      var h = el.offsetHeight || 60;
+      var leftPad = Math.max(6, Math.min(12, vw * 0.02));
+      /* Debajo del header sticky; margen inferior para no pelear con WA/safe-area */
+      var topPad = 72;
+      var bottomPad = vw <= 720 ? 36 : 24;
+      var y0 = topPad;
+      var y1 = Math.max(y0 + 8, vh - h - bottomPad);
+      var zigAmp = simple ? 0 : Math.min(hoverNone ? 32 : 48, Math.max(18, vw * 0.07));
+      return { w: w, h: h, leftPad: leftPad, y0: y0, y1: y1, zigAmp: zigAmp };
+    }
+
+    function pathAt(p) {
+      var y = L.y0 + p * (L.y1 - L.y0);
+      var x = L.leftPad;
+      var face = 1;
+
+      if (!simple && L.zigAmp > 0) {
+        var phase = p * STEPS;
+        /* Triángulo 0→amp→0: escalones / zigzag lateral */
+        var tri = 1 - Math.abs((phase % 2) - 1);
+        x = L.leftPad + tri * L.zigAmp;
+        face = (phase % 2) < 1 ? 1 : -1;
+        /* Saltito hacia arriba en cada escalón */
+        var hop = Math.sin(phase * Math.PI);
+        if (hop > 0) y -= hop * HOP_AMP;
       }
-      targetX = next;
+
+      return { x: x, y: y, facing: face };
+    }
+
+    function setTargetsFromScroll() {
+      var pt = pathAt(scrollProgress());
+      targetX = pt.x;
+      targetY = pt.y;
+      facing = pt.facing;
+    }
+
+    function applyTransform() {
+      el.style.transform =
+        "translate3d(" + currentX.toFixed(2) + "px," + currentY.toFixed(2) + "px,0)";
+      if (img) {
+        img.style.transform = simple ? "none" : "scaleX(" + facing + ")";
+      }
+    }
+
+    function onScroll() {
+      if (scrollQueued) return;
+      scrollQueued = true;
       if (!raf) raf = requestAnimationFrame(tick);
     }
 
     function tick() {
+      scrollQueued = false;
+      setTargetsFromScroll();
+
       var dx = targetX - currentX;
+      var dy = targetY - currentY;
       currentX += dx * LERP;
+      currentY += dy * LERP;
+      applyTransform();
 
-      var speed = Math.abs(dx);
-      if (speed > 0.35) {
-        bobPhase += BOB_SPEED * Math.min(2.2, 0.55 + speed * 0.08);
-      } else {
-        bobPhase += BOB_SPEED * 0.25;
-      }
-      var bob = Math.sin(bobPhase) * BOB_AMP * (speed > 0.2 ? 1 : 0.35);
-      currentY = bob;
-
-      el.style.transform =
-        "translate3d(" + currentX.toFixed(2) + "px," + currentY.toFixed(2) + "px,0)";
-      if (el._img) el._img.style.transform = "scaleX(" + facing + ")";
-
-      if (Math.abs(dx) > 0.15 || Math.abs(Math.sin(bobPhase)) > 0.02) {
+      if (Math.abs(dx) > 0.25 || Math.abs(dy) > 0.25) {
         raf = requestAnimationFrame(tick);
       } else {
+        currentX = targetX;
+        currentY = targetY;
+        applyTransform();
         raf = 0;
       }
     }
 
-    window.addEventListener("scroll", updateTarget, { passive: true });
+    function hardSync() {
+      L = layout();
+      setTargetsFromScroll();
+      currentX = targetX;
+      currentY = targetY;
+      applyTransform();
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", function () {
-      lastTarget = EDGE_PAD + scrollProgress() * maxTravel();
-      targetX = lastTarget;
-      currentX = lastTarget;
-      updateTarget();
+      hardSync();
+      onScroll();
     }, { passive: true });
 
     document.addEventListener("visibilitychange", function () {
@@ -311,15 +368,15 @@
           cancelAnimationFrame(raf);
           raf = 0;
         }
+        scrollQueued = false;
       } else {
-        updateTarget();
+        hardSync();
+        onScroll();
       }
     });
 
-    currentX = EDGE_PAD + scrollProgress() * maxTravel();
-    lastTarget = currentX;
-    targetX = currentX;
-    updateTarget();
+    hardSync();
+    onScroll();
   })();
 
 })();

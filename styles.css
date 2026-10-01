@@ -1125,15 +1125,17 @@ main { position: relative; z-index: 1; }
 
 .mascota {
   position: fixed;
-  left: 0;
-  bottom: max(1.1rem, env(safe-area-inset-bottom, 0px));
-  z-index: 80;
-  width: 112px;
+  left: max(0.25rem, env(safe-area-inset-left, 0px));
+  top: 0;
+  bottom: auto;
+  z-index: 40; /* bajo filtros sticky(50), WA(90) y header(100) */
+  width: 64px;
   height: auto;
   pointer-events: none;
   will-change: transform;
   transform: translate3d(0, 0, 0);
   user-select: none;
+  contain: layout style;
 }
 
 .mascota img {
@@ -1141,14 +1143,26 @@ main { position: relative; z-index: 1; }
   width: 100%;
   height: auto;
   transform-origin: center bottom;
-  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.28));
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.22));
   will-change: transform;
+}
+
+/* Fija (reduced-motion): anclada abajo-izquierda, sin animación JS */
+.mascota.is-static {
+  top: auto;
+  bottom: max(1.1rem, env(safe-area-inset-bottom, 0px));
+  will-change: auto;
+  transform: none;
+}
+
+.mascota.is-static img {
+  will-change: auto;
+  transform: none;
 }
 
 @media (max-width: 720px) {
   .mascota {
-    width: 78px;
-    bottom: max(5.6rem, calc(env(safe-area-inset-bottom, 0px) + 4.6rem));
+    width: 56px; /* ~48–64px mobile */
   }
 
   .logo-img {
@@ -1164,9 +1178,23 @@ main { position: relative; z-index: 1; }
   }
 }
 
+@media (max-width: 380px) {
+  .mascota {
+    width: 48px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mascota {
-    display: none;
+    /* Visible pero estática; JS añade .is-static */
+    top: auto;
+    bottom: max(1.1rem, env(safe-area-inset-bottom, 0px));
+    will-change: auto;
+    transform: none;
+  }
+
+  .mascota img {
+    will-change: auto;
   }
 }
 
