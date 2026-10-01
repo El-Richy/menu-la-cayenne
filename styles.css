@@ -95,7 +95,7 @@ body {
 #atmosphere {
   position: fixed;
   inset: 0;
-  z-index: 2;
+  z-index: 0;
   pointer-events: none;
 }
 
@@ -497,7 +497,7 @@ main { position: relative; z-index: 1; }
 
 .menu-section {
   padding: 5.5rem 0 6rem;
-  background: rgba(246, 237, 217, 0.72);
+  background: rgba(246, 237, 217, 0.5);
 }
 
 .menu-filters {
@@ -880,7 +880,7 @@ main { position: relative; z-index: 1; }
 
 .contacto-section {
   padding: 5.5rem 0 6rem;
-  background: rgba(234, 217, 188, 0.7);
+  background: rgba(234, 217, 188, 0.48);
 }
 
 .contacto-grid {
