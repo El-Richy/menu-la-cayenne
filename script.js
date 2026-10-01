@@ -230,4 +230,96 @@
       }
     });
   }
+
+  /* Mascota: camina con el scroll (lerp + rAF) */
+  (function initMascota() {
+    var el = document.getElementById("mascota");
+    if (!el) return;
+
+    if (reduceMotion.matches) {
+      el.hidden = true;
+      return;
+    }
+
+    var targetX = 0;
+    var currentX = 0;
+    var currentY = 0;
+    var facing = 1;
+    var lastTarget = 0;
+    var raf = 0;
+    var bobPhase = 0;
+    var LERP = 0.12;
+    var BOB_AMP = 3.5;
+    var BOB_SPEED = 0.085;
+    var EDGE_PAD = 12;
+
+    function maxTravel() {
+      return Math.max(0, window.innerWidth - el.offsetWidth - EDGE_PAD * 2);
+    }
+
+    function scrollProgress() {
+      var doc = document.documentElement;
+      var maxScroll = Math.max(1, doc.scrollHeight - window.innerHeight);
+      return Math.min(1, Math.max(0, window.scrollY / maxScroll));
+    }
+
+    function updateTarget() {
+      var next = EDGE_PAD + scrollProgress() * maxTravel();
+      if (Math.abs(next - lastTarget) > 0.5) {
+        facing = next >= lastTarget ? 1 : -1;
+        lastTarget = next;
+      }
+      targetX = next;
+      if (!raf) raf = requestAnimationFrame(tick);
+    }
+
+    function tick() {
+      var dx = targetX - currentX;
+      currentX += dx * LERP;
+
+      var speed = Math.abs(dx);
+      if (speed > 0.35) {
+        bobPhase += BOB_SPEED * Math.min(2.2, 0.55 + speed * 0.08);
+      } else {
+        bobPhase += BOB_SPEED * 0.25;
+      }
+      var bob = Math.sin(bobPhase) * BOB_AMP * (speed > 0.2 ? 1 : 0.35);
+      currentY = bob;
+
+      el.style.transform =
+        "translate3d(" + currentX.toFixed(2) + "px," + currentY.toFixed(2) + "px,0)";
+      if (el._img) el._img.style.transform = "scaleX(" + facing + ")";
+
+      if (Math.abs(dx) > 0.15 || Math.abs(Math.sin(bobPhase)) > 0.02) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        raf = 0;
+      }
+    }
+
+    window.addEventListener("scroll", updateTarget, { passive: true });
+    window.addEventListener("resize", function () {
+      lastTarget = EDGE_PAD + scrollProgress() * maxTravel();
+      targetX = lastTarget;
+      currentX = lastTarget;
+      updateTarget();
+    }, { passive: true });
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) {
+        if (raf) {
+          cancelAnimationFrame(raf);
+          raf = 0;
+        }
+      } else {
+        updateTarget();
+      }
+    });
+
+    currentX = EDGE_PAD + scrollProgress() * maxTravel();
+    lastTarget = currentX;
+    targetX = currentX;
+    updateTarget();
+  })();
+
 })();

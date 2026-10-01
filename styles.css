@@ -200,6 +200,16 @@ main { position: relative; z-index: 1; }
 .logo {
   display: flex;
   align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.logo-img {
+  width: 52px;
+  height: auto;
+  flex-shrink: 0;
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
 }
 
 .logo-text-wrap {
@@ -1111,6 +1121,54 @@ main { position: relative; z-index: 1; }
 }
 
 .footer-top:hover { opacity: 0.7; }
+
+
+.mascota {
+  position: fixed;
+  left: 0;
+  bottom: max(1.1rem, env(safe-area-inset-bottom, 0px));
+  z-index: 80;
+  width: 112px;
+  height: auto;
+  pointer-events: none;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  user-select: none;
+}
+
+.mascota img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: center bottom;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.28));
+  will-change: transform;
+}
+
+@media (max-width: 720px) {
+  .mascota {
+    width: 78px;
+    bottom: max(5.6rem, calc(env(safe-area-inset-bottom, 0px) + 4.6rem));
+  }
+
+  .logo-img {
+    width: 42px;
+  }
+
+  .logo-script {
+    display: none;
+  }
+
+  .logo-text {
+    font-size: 1.05rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mascota {
+    display: none;
+  }
+}
 
 .wa-float {
   position: fixed;
