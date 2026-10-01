@@ -166,8 +166,8 @@
     if (!ctx) return;
 
     var mobile = window.innerWidth <= 768;
-    var count = mobile ? 14 : 42;
-    var linkDist = mobile ? 0 : 110;
+    var count = mobile ? 28 : 42;
+    var linkDist = mobile ? 90 : 110;
     var grabDist = mobile || !finePointer.matches ? 0 : 120;
     var particles = [];
     var w = 0;
@@ -177,9 +177,14 @@
     var my = -9999;
 
     function resize() {
-      var dpr = mobile ? 1 : Math.min(window.devicePixelRatio || 1, 1.5);
+      mobile = window.innerWidth <= 768;
+      var dpr = Math.min(window.devicePixelRatio || 1, mobile ? 2 : 1.5);
       w = window.innerWidth;
       h = window.innerHeight;
+      if (window.visualViewport) {
+        w = window.visualViewport.width;
+        h = window.visualViewport.height;
+      }
       canvas.width = Math.floor(w * dpr);
       canvas.height = Math.floor(h * dpr);
       canvas.style.width = w + "px";
@@ -192,9 +197,9 @@
       particles.push({
         x: Math.random() * (window.innerWidth || 1),
         y: Math.random() * (window.innerHeight || 1),
-        vx: (Math.random() - 0.5) * 0.22,
-        vy: -0.12 - Math.random() * 0.28,
-        r: 1 + Math.random() * 1.8,
+        vx: (Math.random() - 0.5) * 0.28,
+        vy: -0.08 - Math.random() * 0.22,
+        r: mobile ? 2.2 + Math.random() * 2.4 : 1 + Math.random() * 1.8,
         cayenne: Math.random() > 0.82
       });
     }
@@ -221,8 +226,8 @@
             var dy = p.y - q.y;
             var dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < linkDist) {
-              ctx.strokeStyle = "rgba(201, 162, 39, " + (1 - dist / linkDist) * 0.18 + ")";
-              ctx.lineWidth = 1;
+              ctx.strokeStyle = "rgba(201, 162, 39, " + (1 - dist / linkDist) * (mobile ? 0.28 : 0.18) + ")";
+              ctx.lineWidth = mobile ? 1.2 : 1;
               ctx.beginPath();
               ctx.moveTo(p.x, p.y);
               ctx.lineTo(q.x, q.y);
@@ -245,10 +250,15 @@
           }
         }
 
-        ctx.fillStyle = p.cayenne ? "rgba(196, 44, 40, 0.45)" : "rgba(201, 162, 39, 0.55)";
+        ctx.fillStyle = p.cayenne
+          ? (mobile ? "rgba(196, 44, 40, 0.7)" : "rgba(196, 44, 40, 0.45)")
+          : (mobile ? "rgba(184, 140, 28, 0.85)" : "rgba(201, 162, 39, 0.55)");
+        ctx.shadowColor = p.cayenne ? "rgba(196, 44, 40, 0.55)" : "rgba(201, 162, 39, 0.65)";
+        ctx.shadowBlur = mobile ? 8 : 4;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fill();
+        ctx.shadowBlur = 0;
       }
 
       raf = requestAnimationFrame(tick);
