@@ -231,30 +231,35 @@
     });
   }
 
-  /* Mascota escaladora: baja con el scroll (lerp + rAF, mobile-first) */
+  /* Mascota multi-pose: se agarra a .menu-card al scroll (lerp + rAF) */
   (function initMascota() {
     var el = document.getElementById("mascota");
     if (!el) return;
 
     var img = el.querySelector("img");
+    var POSES = {
+      idle: "assets/mascota.png",
+      hang: "assets/mascota-hang.png",
+      jump: "assets/mascota-jump.png",
+      cling: "assets/mascota-cling.png",
+      reach: "assets/mascota-reach.png"
+    };
 
-    /* prefers-reduced-motion: fija, sin animación */
-    if (reduceMotion.matches) {
-      el.classList.add("is-static");
-      return;
-    }
+    /* Prefetch poses (además de <link rel=preload> en HTML) */
+    Object.keys(POSES).forEach(function (key) {
+      var pre = new Image();
+      pre.decoding = "async";
+      pre.src = POSES[key];
+    });
 
     var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     var cores = navigator.hardwareConcurrency || 8;
-    var hoverNone = window.matchMedia("(hover: none)").matches;
-    /* Modo simple: save-data, CPU baja, o touch+CPU limitada → solo translate Y */
-    var simple =
-      !!(conn && conn.saveData) ||
-      cores <= 4 ||
-      (hoverNone && cores <= 6);
-
+    /* Modo simple: save-data o CPU baja → 1 pose + translateY */
+    var simple = !!(conn && conn.saveData) || cores <= 4;
     if (simple) el.classList.add("is-simple");
 
+    var anchors = [];
+    var baseLeft = 0;
     var targetX = 0;
     var targetY = 0;
     var currentX = 0;
@@ -262,67 +267,154 @@
     var facing = 1;
     var raf = 0;
     var scrollQueued = false;
-    var LERP = simple ? 0.16 : 0.12;
-    var STEPS = hoverNone ? 6 : 8;
-    var HOP_AMP = simple ? 0 : (hoverNone ? 6 : 8);
-    var L = null;
+    var currentPose = simple ? "idle" : "hang";
+    var activeIndex = 0;
+    var lastScrollY = window.scrollY;
+    var lastScrollT = performance.now();
+    var velocity = 0;
+    var LERP = simple ? 0.18 : 0.14;
+    var JUMP_VEL = 900;
+    var REACH_DIST = 70;
+    var resizeTimer = 0;
 
-    function scrollProgress() {
-      var doc = document.documentElement;
-      var maxScroll = Math.max(1, doc.scrollHeight - window.innerHeight);
-      return Math.min(1, Math.max(0, window.scrollY / maxScroll));
+    function setPose(next) {
+      if (!img || next === currentPose) return;
+      var src = POSES[next] || POSES.idle;
+      if (img.getAttribute("src") !== src) {
+        img.setAttribute("src", src);
+      }
+      currentPose = next;
+      el.dataset.pose = next;
     }
 
-    function layout() {
-      var vw = window.innerWidth;
-      var vh = window.innerHeight;
-      var w = el.offsetWidth || 56;
-      var h = el.offsetHeight || 60;
-      var leftPad = Math.max(6, Math.min(12, vw * 0.02));
-      /* Debajo del header sticky; margen inferior para no pelear con WA/safe-area */
-      var topPad = 72;
-      var bottomPad = vw <= 720 ? 36 : 24;
-      var y0 = topPad;
-      var y1 = Math.max(y0 + 8, vh - h - bottomPad);
-      var zigAmp = simple ? 0 : Math.min(hoverNone ? 32 : 48, Math.max(18, vw * 0.07));
-      return { w: w, h: h, leftPad: leftPad, y0: y0, y1: y1, zigAmp: zigAmp };
+    function measureBase() {
+      var cs = window.getComputedStyle(el);
+      baseLeft = parseFloat(cs.left) || 0;
     }
 
-    function pathAt(p) {
-      var y = L.y0 + p * (L.y1 - L.y0);
-      var x = L.leftPad;
-      var face = 1;
+    function rebuildAnchors() {
+      anchors = [];
+      var cards = document.querySelectorAll(".menu-card");
+      var sy = window.scrollY;
+      var sx = window.scrollX;
+      var i;
+      for (i = 0; i < cards.length; i++) {
+        var card = cards[i];
+        var cat = card.closest(".menu-category");
+        if (cat && cat.classList.contains("is-hidden")) continue;
+        var r = card.getBoundingClientRect();
+        if (r.width < 2 || r.height < 2) continue;
+        anchors.push({
+          docTop: r.top + sy,
+          docLeft: r.left + sx,
+          width: r.width,
+          height: r.height,
+          side: anchors.length % 2
+        });
+      }
+    }
 
-      if (!simple && L.zigAmp > 0) {
-        var phase = p * STEPS;
-        /* Triángulo 0→amp→0: escalones / zigzag lateral */
-        var tri = 1 - Math.abs((phase % 2) - 1);
-        x = L.leftPad + tri * L.zigAmp;
-        face = (phase % 2) < 1 ? 1 : -1;
-        /* Saltito hacia arriba en cada escalón */
-        var hop = Math.sin(phase * Math.PI);
-        if (hop > 0) y -= hop * HOP_AMP;
+    function cardIndex() {
+      if (!anchors.length) return 0;
+      /* Línea de foco ~28% viewport: cards cuyo top ya pasó */
+      var focus = window.scrollY + window.innerHeight * 0.28;
+      var idx = 0;
+      var k;
+      for (k = 0; k < anchors.length; k++) {
+        if (anchors[k].docTop <= focus) idx = k;
+        else break;
+      }
+      return idx;
+    }
+
+    function targetFor(index, mw, mh) {
+      if (!anchors.length) {
+        return { x: 8, y: 96, pose: simple ? "idle" : "hang", face: 1 };
+      }
+      var a = anchors[Math.max(0, Math.min(anchors.length - 1, index))];
+      var top = a.docTop - window.scrollY;
+      var left = a.docLeft - window.scrollX;
+      var x;
+      var y;
+      var pose;
+      var face;
+
+      if (simple) {
+        /* Solo Y entre cards; X fija al lado izquierdo de la card */
+        x = left - mw * 0.15;
+        y = top - mh * 0.08;
+        pose = "idle";
+        face = 1;
+      } else if (a.side === 0) {
+        /* top-right → hang */
+        x = left + a.width - mw * 0.62;
+        y = top - mh * 0.1;
+        pose = "hang";
+        face = 1;
+      } else {
+        /* top-left / costado → cling */
+        x = left - mw * 0.38;
+        y = top - mh * 0.06;
+        pose = "cling";
+        face = -1;
       }
 
-      return { x: x, y: y, facing: face };
+      /* No tapar WA (abajo-derecha) ni salirse del viewport */
+      var maxX = window.innerWidth - mw - 10;
+      var maxY = window.innerHeight - mh - 88;
+      x = Math.max(4, Math.min(maxX, x));
+      y = Math.max(64, Math.min(maxY, y));
+
+      return { x: x - baseLeft, y: y, pose: pose, face: face };
     }
 
-    function setTargetsFromScroll() {
-      var pt = pathAt(scrollProgress());
-      targetX = pt.x;
-      targetY = pt.y;
-      facing = pt.facing;
+    function pickPose(settledPose, dist, vel, indexChanged) {
+      if (simple) return "idle";
+      var absV = Math.abs(vel);
+      if (absV > JUMP_VEL || (indexChanged && absV > 420)) return "jump";
+      if (dist > REACH_DIST) return "reach";
+      return settledPose;
     }
 
     function applyTransform() {
       el.style.transform =
         "translate3d(" + currentX.toFixed(2) + "px," + currentY.toFixed(2) + "px,0)";
-      if (img) {
-        img.style.transform = simple ? "none" : "scaleX(" + facing + ")";
+      if (img && !simple) {
+        img.style.transform = "scaleX(" + facing + ")";
+      } else if (img) {
+        img.style.transform = "none";
       }
     }
 
+    function setTargetsFromScroll() {
+      var mw = el.offsetWidth || 56;
+      var mh = el.offsetHeight || 60;
+      var index = cardIndex();
+      var indexChanged = index !== activeIndex;
+      var pt = targetFor(index, mw, mh);
+
+      /* Arco de salto si vamos rápido hacia otra card */
+      var dist = Math.hypot(pt.x - currentX, pt.y - currentY);
+      var pose = pickPose(pt.pose, dist, velocity, indexChanged);
+      if (pose === "jump") {
+        pt.y -= Math.min(36, 10 + dist * 0.12);
+      }
+
+      targetX = pt.x;
+      targetY = pt.y;
+      facing = pt.face;
+      setPose(pose);
+      activeIndex = index;
+    }
+
     function onScroll() {
+      var now = performance.now();
+      var sy = window.scrollY;
+      var dt = Math.max(8, now - lastScrollT);
+      velocity = ((sy - lastScrollY) / dt) * 1000;
+      lastScrollY = sy;
+      lastScrollT = now;
+
       if (scrollQueued) return;
       scrollQueued = true;
       if (!raf) raf = requestAnimationFrame(tick);
@@ -338,29 +430,75 @@
       currentY += dy * LERP;
       applyTransform();
 
-      if (Math.abs(dx) > 0.25 || Math.abs(dy) > 0.25) {
+      /* Amortiguar velocity cuando no hay scroll reciente */
+      if (performance.now() - lastScrollT > 120) {
+        velocity *= 0.85;
+      }
+
+      if (Math.abs(dx) > 0.3 || Math.abs(dy) > 0.3 || Math.abs(velocity) > 40) {
         raf = requestAnimationFrame(tick);
       } else {
         currentX = targetX;
         currentY = targetY;
+        /* Al asentarse, pose hang/cling definitiva */
+        if (!simple && anchors.length) {
+          var settled = anchors[activeIndex] && anchors[activeIndex].side === 0 ? "hang" : "cling";
+          setPose(settled);
+        }
         applyTransform();
         raf = 0;
       }
     }
 
     function hardSync() {
-      L = layout();
+      measureBase();
+      rebuildAnchors();
       setTargetsFromScroll();
       currentX = targetX;
       currentY = targetY;
       applyTransform();
     }
 
+    function scheduleRebuild() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        hardSync();
+        onScroll();
+      }, 120);
+    }
+
+    /* prefers-reduced-motion: fija en primera card */
+    if (reduceMotion.matches) {
+      el.classList.add("is-static");
+      measureBase();
+      rebuildAnchors();
+      setPose(simple ? "idle" : "hang");
+      var mw0 = el.offsetWidth || 56;
+      var mh0 = el.offsetHeight || 60;
+      var pin = targetFor(0, mw0, mh0);
+      currentX = targetX = pin.x;
+      currentY = targetY = pin.y;
+      facing = pin.face;
+      applyTransform();
+      window.addEventListener("resize", scheduleRebuild, { passive: true });
+      window.addEventListener("orientationchange", scheduleRebuild, { passive: true });
+      return;
+    }
+
+    setPose(currentPose);
+
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", function () {
-      hardSync();
-      onScroll();
-    }, { passive: true });
+    window.addEventListener("resize", scheduleRebuild, { passive: true });
+    window.addEventListener("orientationchange", scheduleRebuild, { passive: true });
+
+    document.querySelectorAll(".filter-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        requestAnimationFrame(function () {
+          rebuildAnchors();
+          onScroll();
+        });
+      });
+    });
 
     document.addEventListener("visibilitychange", function () {
       if (document.hidden) {

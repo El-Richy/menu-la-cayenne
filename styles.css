@@ -1147,17 +1147,13 @@ main { position: relative; z-index: 1; }
   will-change: transform;
 }
 
-/* Fija (reduced-motion): anclada abajo-izquierda, sin animación JS */
+/* Fija (reduced-motion): JS la clava en la primera card, sin animación */
 .mascota.is-static {
-  top: auto;
-  bottom: max(1.1rem, env(safe-area-inset-bottom, 0px));
   will-change: auto;
-  transform: none;
 }
 
 .mascota.is-static img {
   will-change: auto;
-  transform: none;
 }
 
 @media (max-width: 720px) {
@@ -1186,11 +1182,8 @@ main { position: relative; z-index: 1; }
 
 @media (prefers-reduced-motion: reduce) {
   .mascota {
-    /* Visible pero estática; JS añade .is-static */
-    top: auto;
-    bottom: max(1.1rem, env(safe-area-inset-bottom, 0px));
+    /* Visible pero estática en primera card; JS añade .is-static */
     will-change: auto;
-    transform: none;
   }
 
   .mascota img {

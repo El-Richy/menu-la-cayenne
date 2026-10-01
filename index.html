@@ -24,6 +24,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Great+Vibes&family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <link rel="preload" as="image" href="assets/mascota-hang.png">
+  <link rel="preload" as="image" href="assets/mascota-jump.png">
+  <link rel="preload" as="image" href="assets/mascota-cling.png">
+  <link rel="preload" as="image" href="assets/mascota-reach.png">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -594,8 +598,8 @@
     </div>
   </footer>
 
-  <div class="mascota" id="mascota" aria-hidden="true">
-    <img src="assets/mascota.png" width="56" height="60" alt="" decoding="async" draggable="false" fetchpriority="low">
+  <div class="mascota" id="mascota" aria-hidden="true" data-pose="hang">
+    <img src="assets/mascota-hang.png" width="56" height="60" alt="" decoding="async" draggable="false" fetchpriority="low">
   </div>
 
   <a href="https://wa.me/573184003076" class="wa-float" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
