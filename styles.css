@@ -1158,7 +1158,7 @@ html:not(.js) .mascota { display: none; }
   position: relative;
   display: block;
   width: 100%;
-  aspect-ratio: 152 / 160;
+  aspect-ratio: 1 / 1;
 }
 
 .mascota-poses img {

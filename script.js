@@ -521,26 +521,28 @@
         nextZone = "contact";
         nx = clampX(layout.contact.docRight - sx - mw * 0.55, mw);
         ny = layout.contact.docTop - sy - mh * 0.15;
-        pose = "hang";
+        pose = "sit";
       } else if (hoverCard && finePointer.matches && !simple) {
         nextZone = "hover";
         var hr = hoverCard.getBoundingClientRect();
         var hp = perchRightTop(hr, mw, mh);
         nx = hp.x;
         ny = hp.y;
-        pose = "hang";
+        pose = "reach";
       } else if (prog.row && prog.row.featured && layout.featured) {
         nextZone = "featured";
         nx = clampX(layout.featured.docRight - sx - mw * 0.55, mw);
         ny = layout.featured.docTop - sy - mh * 0.15;
-        pose = "hang";
+        pose = "sit";
       } else if (prog.row) {
         nextZone = "climb";
         nx = layout.railX;
         var y0 = prog.row.docTop - sy - mh * 0.12;
         var y1 = prog.nextRow ? prog.nextRow.docTop - sy - mh * 0.12 : y0;
         ny = lerp(y0, y1, easeInOut(prog.frac));
-        pose = Math.abs(velocity) < SLOW_VEL ? "hang" : "jump";
+        if (Math.abs(velocity) >= SLOW_VEL) pose = "jump";
+        else if (prog.frac > 0.22 && prog.frac < 0.82) pose = "cling";
+        else pose = "hang";
       } else {
         nextZone = "hero";
         nx = layout.railX;
@@ -554,12 +556,12 @@
         if (layout.filterEl) {
           ny = layout.filterEl.getBoundingClientRect().bottom;
         }
-        pose = "hang";
+        pose = "cling";
       }
 
       if (now < boopUntil) {
         nextZone = "boop";
-        pose = "jump";
+        pose = "wave";
       }
 
       if (simple) {
@@ -732,7 +734,7 @@
       if (simple) return;
       boopUntil = performance.now() + BOOP_MS;
       vy -= 420;
-      setPose("jump");
+      setPose("wave");
       kick();
     });
 
