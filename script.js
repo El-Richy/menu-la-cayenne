@@ -55,6 +55,7 @@
   var pill = bar ? bar.querySelector(".t-tabs-pill") : null;
   var filters = document.querySelectorAll(".filter-btn");
   var categories = document.querySelectorAll(".menu-category");
+  var onMascotaFilter = null;
 
   function activeFilter() {
     return document.querySelector(".filter-btn.is-active") || filters[0];
@@ -98,6 +99,7 @@
         block: "nearest",
         behavior: reduceMotion.matches ? "auto" : "smooth"
       });
+      if (onMascotaFilter) onMascotaFilter();
     });
   });
 
@@ -231,71 +233,112 @@
     });
   }
 
-  /* Mascota multi-pose: un solo lado (derecha), animación por velocidad de scroll */
+  /* Mascot: right rail, spring, hang/jump. Decoration — one rAF. */
   (function initMascota() {
     var el = document.getElementById("mascota");
     if (!el) return;
 
-    var img = el.querySelector("img");
-    var POSES = {
-      idle: "assets/mascota.png",
-      hang: "assets/mascota-hang.png",
-      jump: "assets/mascota-jump.png",
-      cling: "assets/mascota-cling.png",
-      reach: "assets/mascota-reach.png"
-    };
-
-    /* Prefetch poses (además de <link rel=preload> en HTML) */
-    Object.keys(POSES).forEach(function (key) {
-      var pre = new Image();
-      pre.decoding = "async";
-      pre.src = POSES[key];
-    });
+    var poseList = el.querySelectorAll(".mascota-poses img[data-pose]");
+    var poseNodes = {};
+    var pi;
+    for (pi = 0; pi < poseList.length; pi++) {
+      poseNodes[poseList[pi].getAttribute("data-pose")] = poseList[pi];
+    }
 
     var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     var cores = navigator.hardwareConcurrency || 8;
-    /* Modo simple: save-data o CPU baja → 1 pose + translateY */
-    var simple = !!(conn && conn.saveData) || cores <= 4;
+    var simple = !!(conn && conn.saveData) || cores <= 2;
     if (simple) el.classList.add("is-simple");
 
-    var anchors = [];
-    var baseLeft = 0;
+    var STIFFNESS = 260;
+    var DAMPING = 18;
+    var SLOW_VEL = 520;
+    var POSE_DEBOUNCE_MS = 120;
+    var HOVER_CLEAR_MS = 120;
+    var BOOP_MS = 420;
+    var DUCK_MS = 280;
+    var LERP_SIMPLE = 0.2;
+    var ROW_GROUP_PX = 40;
+
+    var x = 0;
+    var y = 0;
+    var vx = 0;
+    var vy = 0;
     var targetX = 0;
     var targetY = 0;
-    var currentX = 0;
-    var currentY = 0;
-    var raf = 0;
-    var scrollQueued = false;
-    var currentPose = simple ? "idle" : "hang";
+    var zone = "hero";
+    var currentPose = "hang";
     var pendingPose = null;
     var lastPoseChangeT = 0;
-    var activeIndex = 0;
+    var raf = 0;
+    var lastT = 0;
     var lastScrollY = window.scrollY;
     var lastScrollT = performance.now();
     var velocity = 0;
-    var LERP_SLOW = simple ? 0.18 : 0.12;
-    var LERP_FAST = simple ? 0.28 : 0.22;
-    /* |v| < SLOW_VEL → climb suave; arriba → slide/fall (mobile-tuned) */
-    var SLOW_VEL = 520;
-    var POSE_DEBOUNCE_MS = 150;
-    var REACH_FRAC = 0.35;
-    var CLING_FRAC = 0.72;
+    var boopUntil = 0;
+    var duckUntil = 0;
+    var wasDucking = false;
+    var rebuildRemain = 0;
     var resizeTimer = 0;
+    var hoverCard = null;
+    var hoverTimer = 0;
+
+    var layout = {
+      railX: 8,
+      mw: 64,
+      mh: 67,
+      headerH: 64,
+      waH: 54,
+      filterEl: null,
+      menuEl: null,
+      contactSection: null,
+      contact: null,
+      featured: null,
+      rows: []
+    };
+
+    function clamp(n, a, b) {
+      return Math.max(a, Math.min(b, n));
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function easeInOut(t) {
+      return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    }
+
+    function applyTransform() {
+      el.style.transform = "translate3d(" + x.toFixed(2) + "px," + y.toFixed(2) + "px,0)";
+    }
+
+    function markReady() {
+      el.classList.add("is-ready");
+    }
 
     function applyPoseNow(next) {
-      if (!img || next === currentPose) return;
-      var src = POSES[next] || POSES.idle;
-      if (img.getAttribute("src") !== src) {
-        img.setAttribute("src", src);
+      if (simple) next = "hang";
+      var node = poseNodes[next] || poseNodes.hang;
+      var name = node ? (node.getAttribute("data-pose") || "hang") : "hang";
+      if (name === currentPose && el.dataset.pose === name) {
+        pendingPose = null;
+        return;
       }
-      currentPose = next;
-      el.dataset.pose = next;
+      var i;
+      for (i = 0; i < poseList.length; i++) {
+        poseList[i].classList.toggle("is-active", poseList[i] === node);
+      }
+      currentPose = name;
+      el.dataset.pose = name;
       lastPoseChangeT = performance.now();
       pendingPose = null;
     }
 
     function setPose(next) {
-      if (!img || next === currentPose) {
+      if (simple) next = "hang";
+      if (!poseNodes[next]) next = "hang";
+      if (next === currentPose) {
         pendingPose = null;
         return;
       }
@@ -314,180 +357,296 @@
       }
     }
 
-    function measureBase() {
-      var cs = window.getComputedStyle(el);
-      baseLeft = parseFloat(cs.left) || 0;
+    function clampY(ny, mh) {
+      return clamp(ny, layout.headerH + 4, window.innerHeight - mh - layout.waH - 16);
     }
 
-    function rebuildAnchors() {
-      anchors = [];
-      var cards = document.querySelectorAll(".menu-card");
+    function clampX(nx, mw) {
+      return clamp(nx, 8, window.innerWidth - mw - 10);
+    }
+
+    function perchRightTop(rect, mw, mh) {
+      return {
+        x: clampX(rect.right - mw * 0.55, mw),
+        y: rect.top - mh * 0.15
+      };
+    }
+
+    function rebuildLayout() {
+      var mw = el.offsetWidth || 64;
+      var mh = el.offsetHeight || 67;
       var sy = window.scrollY;
       var sx = window.scrollX;
+
+      var headerEl = document.querySelector(".site-header");
+      var headerH = headerEl ? headerEl.getBoundingClientRect().height : 64;
+
+      var waEl = document.querySelector(".wa-float");
+      var waH = 54;
+      if (waEl) {
+        var waR = waEl.getBoundingClientRect();
+        if (waR.height > 1) waH = waR.height;
+      }
+
+      var inner = document.querySelector(".menu-section .section-inner");
+      var railX = window.innerWidth - mw - 10;
+      if (inner) {
+        var innerR = inner.getBoundingClientRect();
+        var padRight = parseFloat(window.getComputedStyle(inner).paddingRight) || 0;
+        railX = innerR.right - padRight - mw * 0.42;
+      }
+      railX = clampX(railX, mw);
+
+      var cards = [];
+      var cardEls = document.querySelectorAll(".menu-card");
       var i;
-      for (i = 0; i < cards.length; i++) {
-        var card = cards[i];
+      for (i = 0; i < cardEls.length; i++) {
+        var card = cardEls[i];
         var cat = card.closest(".menu-category");
         if (cat && cat.classList.contains("is-hidden")) continue;
         var r = card.getBoundingClientRect();
         if (r.width < 2 || r.height < 2) continue;
-        /* Siempre borde derecho — sin zigzag ni flip de cara */
-        anchors.push({
+        cards.push({
+          el: card,
           docTop: r.top + sy,
-          docLeft: r.left + sx,
-          width: r.width,
-          height: r.height
+          docBottom: r.bottom + sy,
+          docRight: r.right + sx,
+          featured: card.id === "plato-cayenne"
         });
       }
+      cards.sort(function (a, b) { return a.docTop - b.docTop; });
+
+      var rows = [];
+      for (i = 0; i < cards.length; i++) {
+        var c = cards[i];
+        var last = rows[rows.length - 1];
+        if (last && Math.abs(c.docTop - last.docTop) <= ROW_GROUP_PX) {
+          last.docBottom = Math.max(last.docBottom, c.docBottom);
+          last.right = Math.max(last.right, c.docRight);
+          if (c.featured) last.featured = c;
+        } else {
+          rows.push({
+            docTop: c.docTop,
+            docBottom: c.docBottom,
+            right: c.docRight,
+            featured: c.featured ? c : null
+          });
+        }
+      }
+
+      var featured = null;
+      var featEl = document.getElementById("plato-cayenne");
+      if (featEl) {
+        var featCat = featEl.closest(".menu-category");
+        if (!(featCat && featCat.classList.contains("is-hidden"))) {
+          var fr = featEl.getBoundingClientRect();
+          if (fr.width >= 2 && fr.height >= 2) {
+            featured = {
+              el: featEl,
+              docTop: fr.top + sy,
+              docBottom: fr.bottom + sy,
+              docRight: fr.right + sx
+            };
+          }
+        }
+      }
+
+      var contactEl = document.querySelector(".contacto-card");
+      var contact = null;
+      if (contactEl) {
+        var cr = contactEl.getBoundingClientRect();
+        if (cr.width >= 2 && cr.height >= 2) {
+          contact = {
+            el: contactEl,
+            docTop: cr.top + sy,
+            docRight: cr.right + sx
+          };
+        }
+      }
+
+      layout.railX = railX;
+      layout.mw = mw;
+      layout.mh = mh;
+      layout.headerH = headerH;
+      layout.waH = waH;
+      layout.filterEl = document.querySelector(".menu-filters");
+      layout.menuEl = document.getElementById("menu");
+      layout.contactSection = document.getElementById("contacto");
+      layout.contact = contact;
+      layout.featured = featured;
+      layout.rows = rows;
     }
 
-    /* Índice fraccional según línea de foco ~28% viewport */
-    function cardProgress() {
-      if (!anchors.length) return { index: 0, frac: 0, next: 0 };
-      var focus = window.scrollY + window.innerHeight * 0.28;
+    function focusedRow(sy) {
+      var rows = layout.rows;
+      if (!rows.length) return { index: 0, frac: 0, next: 0, row: null, nextRow: null };
+      var focus = sy + window.innerHeight * 0.28;
       var idx = 0;
       var k;
-      for (k = 0; k < anchors.length; k++) {
-        if (anchors[k].docTop <= focus) idx = k;
+      for (k = 0; k < rows.length; k++) {
+        if (rows[k].docTop <= focus) idx = k;
         else break;
       }
-      var next = Math.min(anchors.length - 1, idx + 1);
+      var next = Math.min(rows.length - 1, idx + 1);
       var frac = 0;
       if (next > idx) {
-        var span = anchors[next].docTop - anchors[idx].docTop;
-        frac = span > 1 ? Math.max(0, Math.min(1, (focus - anchors[idx].docTop) / span)) : 0;
+        var span = rows[next].docTop - rows[idx].docTop;
+        frac = span > 1 ? clamp((focus - rows[idx].docTop) / span, 0, 1) : 0;
       }
-      return { index: idx, frac: frac, next: next };
+      return { index: idx, frac: frac, next: next, row: rows[idx], nextRow: rows[next] };
     }
 
-    function clampToViewport(x, y, mw, mh) {
-      /* No tapar WA (abajo-derecha) ni salirse del viewport */
-      var maxX = window.innerWidth - mw - 10;
-      var maxY = window.innerHeight - mh - 88;
-      x = Math.max(4, Math.min(maxX, x));
-      y = Math.max(64, Math.min(maxY, y));
-      return { x: x - baseLeft, y: y };
-    }
+    function updateTargets(now) {
+      var mw = el.offsetWidth || layout.mw || 64;
+      var mh = el.offsetHeight || layout.mh || 67;
+      var sy = window.scrollY;
+      var sx = window.scrollX;
+      var pose = "hang";
+      var nextZone = "climb";
+      var nx = layout.railX;
+      var ny = layout.headerH + 8;
 
-    /* Ancla fija en el borde derecho de la card (sin scaleX) */
-    function pinAt(a, mw, mh, yBias) {
-      var top = a.docTop - window.scrollY;
-      var left = a.docLeft - window.scrollX;
-      var x = left + a.width - mw * 0.62;
-      var y = top - mh * 0.1 + (yBias || 0);
-      return clampToViewport(x, y, mw, mh);
-    }
+      var menuTop = layout.menuEl ? layout.menuEl.getBoundingClientRect().top : 0;
+      var contactTop = layout.contactSection
+        ? layout.contactSection.getBoundingClientRect().top
+        : Infinity;
+      var prog = focusedRow(sy);
 
-    function lerp(a, b, t) {
-      return a + (b - a) * t;
-    }
-
-    function easeInOut(t) {
-      return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-    }
-
-    function pickClimbPose(frac, settled) {
-      if (frac < REACH_FRAC) return settled;
-      if (frac < CLING_FRAC) return "reach";
-      return "cling";
-    }
-
-    function setTargetsFromScroll() {
-      var mw = el.offsetWidth || 56;
-      var mh = el.offsetHeight || 60;
-      var prog = cardProgress();
-      var absV = Math.abs(velocity);
-      var fast = !simple && absV >= SLOW_VEL;
-      var lerpAmt = fast ? LERP_FAST : LERP_SLOW;
-
-      if (!anchors.length) {
-        targetX = 8;
-        targetY = 96;
-        setPose(simple ? "idle" : "hang");
-        activeIndex = 0;
-        return lerpAmt;
+      if (menuTop > window.innerHeight * 0.55) {
+        nextZone = "hero";
+        nx = layout.railX;
+        ny = layout.headerH + 8;
+        pose = "hang";
+      } else if (contactTop < window.innerHeight * 0.45 && layout.contact) {
+        nextZone = "contact";
+        nx = clampX(layout.contact.docRight - sx - mw * 0.55, mw);
+        ny = layout.contact.docTop - sy - mh * 0.15;
+        pose = "hang";
+      } else if (hoverCard && finePointer.matches && !simple) {
+        nextZone = "hover";
+        var hr = hoverCard.getBoundingClientRect();
+        var hp = perchRightTop(hr, mw, mh);
+        nx = hp.x;
+        ny = hp.y;
+        pose = "hang";
+      } else if (prog.row && prog.row.featured && layout.featured) {
+        nextZone = "featured";
+        nx = clampX(layout.featured.docRight - sx - mw * 0.55, mw);
+        ny = layout.featured.docTop - sy - mh * 0.15;
+        pose = "hang";
+      } else if (prog.row) {
+        nextZone = "climb";
+        nx = layout.railX;
+        var y0 = prog.row.docTop - sy - mh * 0.12;
+        var y1 = prog.nextRow ? prog.nextRow.docTop - sy - mh * 0.12 : y0;
+        ny = lerp(y0, y1, easeInOut(prog.frac));
+        pose = Math.abs(velocity) < SLOW_VEL ? "hang" : "jump";
+      } else {
+        nextZone = "hero";
+        nx = layout.railX;
+        ny = layout.headerH + 8;
+        pose = "hang";
       }
 
-      var a0 = anchors[prog.index];
-      var a1 = anchors[prog.next];
-      var p0 = pinAt(a0, mw, mh, 0);
-      var p1 = pinAt(a1, mw, mh, 0);
-      var pose;
+      if (now < duckUntil) {
+        nextZone = "duck";
+        nx = layout.railX;
+        if (layout.filterEl) {
+          ny = layout.filterEl.getBoundingClientRect().bottom;
+        }
+        pose = "hang";
+      }
+
+      if (now < boopUntil) {
+        nextZone = "boop";
+        pose = "jump";
+      }
 
       if (simple) {
-        /* Solo Y entre cards; X siempre al borde derecho */
-        var t = easeInOut(prog.frac);
-        targetX = lerp(p0.x, p1.x, t);
-        targetY = lerp(p0.y, p1.y, t);
-        setPose("idle");
-      } else if (fast) {
-        /* Slide/fall vertical hacia la card activa — sin saltar de lado */
-        var fallBias = velocity > 0
-          ? Math.min(42, 12 + absV * 0.018)
-          : -Math.min(28, 8 + absV * 0.012);
-        var dest = pinAt(anchors[prog.index], mw, mh, fallBias);
-        targetX = dest.x;
-        targetY = dest.y;
-        pose = "jump";
-        setPose(pose);
-      } else {
-        /* Climb suave card-a-card: hang → reach → cling → hang */
-        var u = easeInOut(prog.frac);
-        targetX = lerp(p0.x, p1.x, u);
-        targetY = lerp(p0.y, p1.y, u);
-        if (prog.frac < 0.08 || prog.index === prog.next) {
-          pose = "hang";
-        } else {
-          pose = pickClimbPose(prog.frac, "hang");
-        }
-        setPose(pose);
+        nx = layout.railX;
+        pose = "hang";
       }
 
-      activeIndex = prog.index;
-      return lerpAmt;
+      if (now >= duckUntil) {
+        ny += clamp(velocity * 0.06, -36, 36);
+      }
+
+      targetX = clampX(nx, mw);
+      targetY = clampY(ny, mh);
+      zone = nextZone;
+      setPose(pose);
     }
 
-    function applyTransform() {
-      el.style.transform =
-        "translate3d(" + currentX.toFixed(2) + "px," + currentY.toFixed(2) + "px,0)";
-      /* Sin scaleX: la cara queda siempre hacia el mismo lado */
-      if (img) img.style.transform = "none";
+    function kick() {
+      if (document.hidden) return;
+      if (!raf) {
+        lastT = performance.now();
+        raf = requestAnimationFrame(tick);
+      }
     }
 
-    function onScroll() {
-      var now = performance.now();
-      var sy = window.scrollY;
-      var dt = Math.max(8, now - lastScrollT);
-      velocity = ((sy - lastScrollY) / dt) * 1000;
-      lastScrollY = sy;
-      lastScrollT = now;
+    function tick(now) {
+      raf = 0;
+      if (document.hidden) return;
 
-      if (scrollQueued) return;
-      scrollQueued = true;
-      if (!raf) raf = requestAnimationFrame(tick);
-    }
+      var dt = Math.min((now - lastT) / 1000, 1 / 30);
+      lastT = now;
+      if (dt < 0) dt = 0;
 
-    function tick() {
-      scrollQueued = false;
-      var lerpAmt = setTargetsFromScroll();
+      if (rebuildRemain > 0) {
+        rebuildLayout();
+        rebuildRemain -= 1;
+      }
+
+      if (wasDucking && now >= duckUntil) {
+        rebuildLayout();
+        wasDucking = false;
+      }
+
+      updateTargets(now);
       flushPendingPose();
 
-      var dx = targetX - currentX;
-      var dy = targetY - currentY;
-      currentX += dx * lerpAmt;
-      currentY += dy * lerpAmt;
-      applyTransform();
-
-      /* Amortiguar velocity cuando no hay scroll reciente */
-      if (performance.now() - lastScrollT > 120) {
-        velocity *= 0.85;
+      if (simple) {
+        y += (targetY - y) * LERP_SIMPLE;
+        x += (targetX - x) * LERP_SIMPLE;
+        vx = 0;
+        vy = 0;
+      } else {
+        var ax = STIFFNESS * (targetX - x) - DAMPING * vx;
+        var ay = STIFFNESS * (targetY - y) - DAMPING * vy;
+        vx += ax * dt;
+        vy += ay * dt;
+        x += vx * dt;
+        y += vy * dt;
       }
 
-      if (Math.abs(dx) > 0.3 || Math.abs(dy) > 0.3 || Math.abs(velocity) > 40 || pendingPose) {
+      applyTransform();
+
+      if (now - lastScrollT > 120) {
+        velocity *= 0.85;
+        if (Math.abs(velocity) < 1) velocity = 0;
+      }
+
+      var dx = targetX - x;
+      var dy = targetY - y;
+      var busy =
+        now < boopUntil ||
+        now < duckUntil ||
+        pendingPose ||
+        now - lastScrollT < 80;
+      var moving =
+        Math.abs(vx) >= 8 ||
+        Math.abs(vy) >= 8 ||
+        Math.abs(dx) >= 0.5 ||
+        Math.abs(dy) >= 0.5;
+
+      if (busy || moving) {
         raf = requestAnimationFrame(tick);
       } else {
-        currentX = targetX;
-        currentY = targetY;
+        x = targetX;
+        y = targetY;
+        vx = 0;
+        vy = 0;
         if (!simple) setPose("hang");
         flushPendingPose();
         applyTransform();
@@ -496,11 +655,12 @@
     }
 
     function hardSync() {
-      measureBase();
-      rebuildAnchors();
-      setTargetsFromScroll();
-      currentX = targetX;
-      currentY = targetY;
+      rebuildLayout();
+      updateTargets(performance.now());
+      x = targetX;
+      y = targetY;
+      vx = 0;
+      vy = 0;
       applyTransform();
     }
 
@@ -508,41 +668,103 @@
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function () {
         hardSync();
-        onScroll();
+        kick();
       }, 120);
     }
 
-    /* prefers-reduced-motion: fija en primera card */
+    function pinStatic() {
+      rebuildLayout();
+      applyPoseNow("hang");
+      var mw = layout.mw;
+      var mh = layout.mh;
+      var sy = window.scrollY;
+      x = layout.railX;
+      if (layout.rows.length) {
+        y = clampY(layout.rows[0].docTop - sy - mh * 0.12, mh);
+      } else {
+        y = layout.headerH + 8;
+      }
+      targetX = x;
+      targetY = y;
+      vx = 0;
+      vy = 0;
+      applyTransform();
+      markReady();
+    }
+
     if (reduceMotion.matches) {
       el.classList.add("is-static");
-      measureBase();
-      rebuildAnchors();
-      applyPoseNow(simple ? "idle" : "hang");
-      var mw0 = el.offsetWidth || 56;
-      var mh0 = el.offsetHeight || 60;
-      var pin = anchors.length ? pinAt(anchors[0], mw0, mh0, 0) : { x: 8, y: 96 };
-      currentX = targetX = pin.x;
-      currentY = targetY = pin.y;
-      applyTransform();
-      window.addEventListener("resize", scheduleRebuild, { passive: true });
-      window.addEventListener("orientationchange", scheduleRebuild, { passive: true });
+      pinStatic();
+      window.addEventListener("resize", pinStatic, { passive: true });
+      window.addEventListener("orientationchange", pinStatic, { passive: true });
+      onMascotaFilter = pinStatic;
+      document.addEventListener("visibilitychange", function () {
+        if (!document.hidden) pinStatic();
+      });
       return;
     }
 
-    applyPoseNow(currentPose);
+    applyPoseNow("hang");
+
+    function onScroll() {
+      var now = performance.now();
+      var sy = window.scrollY;
+      var dtMs = Math.max(8, now - lastScrollT);
+      velocity = ((sy - lastScrollY) / dtMs) * 1000;
+      lastScrollY = sy;
+      lastScrollT = now;
+      kick();
+    }
 
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", scheduleRebuild, { passive: true });
     window.addEventListener("orientationchange", scheduleRebuild, { passive: true });
 
-    document.querySelectorAll(".filter-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        requestAnimationFrame(function () {
-          rebuildAnchors();
-          onScroll();
-        });
-      });
+    onMascotaFilter = function () {
+      duckUntil = performance.now() + DUCK_MS;
+      wasDucking = true;
+      rebuildRemain = 2;
+      kick();
+    };
+
+    el.addEventListener("click", function (event) {
+      event.preventDefault();
+      if (simple) return;
+      boopUntil = performance.now() + BOOP_MS;
+      vy -= 420;
+      setPose("jump");
+      kick();
     });
+
+    var menuSection = document.querySelector(".menu-section");
+    if (menuSection && finePointer.matches && !simple) {
+      menuSection.addEventListener("pointerenter", function (event) {
+        var card = event.target.closest(".menu-card");
+        if (!card || !menuSection.contains(card)) return;
+        clearTimeout(hoverTimer);
+        hoverCard = card;
+        kick();
+      }, true);
+      menuSection.addEventListener("pointerleave", function (event) {
+        var card = event.target.closest(".menu-card");
+        if (!card) return;
+        clearTimeout(hoverTimer);
+        hoverTimer = setTimeout(function () {
+          hoverCard = null;
+          kick();
+        }, HOVER_CLEAR_MS);
+      }, true);
+      el.addEventListener("pointerenter", function () {
+        clearTimeout(hoverTimer);
+      });
+      el.addEventListener("pointerleave", function () {
+        clearTimeout(hoverTimer);
+        hoverTimer = setTimeout(function () {
+          hoverCard = null;
+          kick();
+        }, HOVER_CLEAR_MS);
+      });
+    }
 
     document.addEventListener("visibilitychange", function () {
       if (document.hidden) {
@@ -550,15 +772,15 @@
           cancelAnimationFrame(raf);
           raf = 0;
         }
-        scrollQueued = false;
       } else {
         hardSync();
-        onScroll();
+        kick();
       }
     });
 
     hardSync();
-    onScroll();
+    markReady();
+    kick();
   })();
 
 })();

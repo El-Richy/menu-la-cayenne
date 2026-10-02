@@ -1123,41 +1123,69 @@ main { position: relative; z-index: 1; }
 .footer-top:hover { opacity: 0.7; }
 
 
+html:not(.js) .mascota { display: none; }
+
+.mascota:not(.is-ready) { visibility: hidden; }
+
 .mascota {
+  appearance: none;
+  -webkit-appearance: none;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  line-height: 0;
   position: fixed;
-  left: max(0.25rem, env(safe-area-inset-left, 0px));
+  left: 0;
   top: 0;
-  bottom: auto;
   z-index: 40; /* bajo filtros sticky(50), WA(90) y header(100) */
   width: 64px;
   height: auto;
-  pointer-events: none;
+  pointer-events: auto;
   will-change: transform;
   transform: translate3d(0, 0, 0);
+  transform-origin: 50% 100%;
+  cursor: pointer;
   user-select: none;
-  contain: layout style;
+  touch-action: manipulation;
 }
 
-.mascota img {
+.mascota-poses {
+  position: relative;
   display: block;
   width: 100%;
-  height: auto;
-  transform-origin: center bottom;
+  aspect-ratio: 152 / 160;
+}
+
+.mascota-poses img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 160ms ease;
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.22));
 }
 
-/* Fija (reduced-motion): JS la clava en la primera card, sin animación */
-.mascota.is-static {
-  will-change: auto;
+.mascota-poses img.is-active {
+  opacity: 1;
 }
 
-.mascota.is-static img {
+.mascota.is-static {
   will-change: auto;
+  cursor: default;
 }
 
 @media (max-width: 720px) {
   .mascota {
-    width: 56px; /* ~48–64px mobile */
+    width: 56px;
   }
 
   .logo-img {
@@ -1181,12 +1209,11 @@ main { position: relative; z-index: 1; }
 
 @media (prefers-reduced-motion: reduce) {
   .mascota {
-    /* Visible pero estática en primera card; JS añade .is-static */
     will-change: auto;
   }
 
-  .mascota img {
-    will-change: auto;
+  .mascota-poses img {
+    transition: none;
   }
 }
 
