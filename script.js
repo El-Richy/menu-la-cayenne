@@ -113,7 +113,7 @@
   }
 
   if (finePointer.matches && !reduceMotion.matches) {
-    document.querySelectorAll(".menu-card, .contacto-card").forEach(function (card) {
+    document.querySelectorAll(".menu-card.featured, .menu-card:has(.badge-sold), .contacto-card").forEach(function (card) {
       var wrap = document.createElement("div");
       wrap.className = "t-tilt";
       card.parentNode.insertBefore(wrap, card);
@@ -125,7 +125,7 @@
       glare.setAttribute("aria-hidden", "true");
       card.appendChild(glare);
 
-      var MAX = 12;
+      var MAX = 6;
 
       function reset() {
         wrap.classList.remove("is-hover");
