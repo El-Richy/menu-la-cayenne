@@ -231,7 +231,7 @@
     });
   }
 
-  /* Mascota multi-pose: se agarra a .menu-card al scroll (lerp + rAF) */
+  /* Mascota multi-pose: un solo lado (derecha), animación por velocidad de scroll */
   (function initMascota() {
     var el = document.getElementById("mascota");
     if (!el) return;
@@ -264,20 +264,25 @@
     var targetY = 0;
     var currentX = 0;
     var currentY = 0;
-    var facing = 1;
     var raf = 0;
     var scrollQueued = false;
     var currentPose = simple ? "idle" : "hang";
+    var pendingPose = null;
+    var lastPoseChangeT = 0;
     var activeIndex = 0;
     var lastScrollY = window.scrollY;
     var lastScrollT = performance.now();
     var velocity = 0;
-    var LERP = simple ? 0.18 : 0.14;
-    var JUMP_VEL = 900;
-    var REACH_DIST = 70;
+    var LERP_SLOW = simple ? 0.18 : 0.12;
+    var LERP_FAST = simple ? 0.28 : 0.22;
+    /* |v| < SLOW_VEL → climb suave; arriba → slide/fall (mobile-tuned) */
+    var SLOW_VEL = 520;
+    var POSE_DEBOUNCE_MS = 150;
+    var REACH_FRAC = 0.35;
+    var CLING_FRAC = 0.72;
     var resizeTimer = 0;
 
-    function setPose(next) {
+    function applyPoseNow(next) {
       if (!img || next === currentPose) return;
       var src = POSES[next] || POSES.idle;
       if (img.getAttribute("src") !== src) {
@@ -285,6 +290,28 @@
       }
       currentPose = next;
       el.dataset.pose = next;
+      lastPoseChangeT = performance.now();
+      pendingPose = null;
+    }
+
+    function setPose(next) {
+      if (!img || next === currentPose) {
+        pendingPose = null;
+        return;
+      }
+      var now = performance.now();
+      if (now - lastPoseChangeT < POSE_DEBOUNCE_MS) {
+        pendingPose = next;
+        return;
+      }
+      applyPoseNow(next);
+    }
+
+    function flushPendingPose() {
+      if (!pendingPose) return;
+      if (performance.now() - lastPoseChangeT >= POSE_DEBOUNCE_MS) {
+        applyPoseNow(pendingPose);
+      }
     }
 
     function measureBase() {
@@ -304,19 +331,19 @@
         if (cat && cat.classList.contains("is-hidden")) continue;
         var r = card.getBoundingClientRect();
         if (r.width < 2 || r.height < 2) continue;
+        /* Siempre borde derecho — sin zigzag ni flip de cara */
         anchors.push({
           docTop: r.top + sy,
           docLeft: r.left + sx,
           width: r.width,
-          height: r.height,
-          side: anchors.length % 2
+          height: r.height
         });
       }
     }
 
-    function cardIndex() {
-      if (!anchors.length) return 0;
-      /* Línea de foco ~28% viewport: cards cuyo top ya pasó */
+    /* Índice fraccional según línea de foco ~28% viewport */
+    function cardProgress() {
+      if (!anchors.length) return { index: 0, frac: 0, next: 0 };
       var focus = window.scrollY + window.innerHeight * 0.28;
       var idx = 0;
       var k;
@@ -324,87 +351,107 @@
         if (anchors[k].docTop <= focus) idx = k;
         else break;
       }
-      return idx;
+      var next = Math.min(anchors.length - 1, idx + 1);
+      var frac = 0;
+      if (next > idx) {
+        var span = anchors[next].docTop - anchors[idx].docTop;
+        frac = span > 1 ? Math.max(0, Math.min(1, (focus - anchors[idx].docTop) / span)) : 0;
+      }
+      return { index: idx, frac: frac, next: next };
     }
 
-    function targetFor(index, mw, mh) {
-      if (!anchors.length) {
-        return { x: 8, y: 96, pose: simple ? "idle" : "hang", face: 1 };
-      }
-      var a = anchors[Math.max(0, Math.min(anchors.length - 1, index))];
-      var top = a.docTop - window.scrollY;
-      var left = a.docLeft - window.scrollX;
-      var x;
-      var y;
-      var pose;
-      var face;
-
-      if (simple) {
-        /* Solo Y entre cards; X fija al lado izquierdo de la card */
-        x = left - mw * 0.15;
-        y = top - mh * 0.08;
-        pose = "idle";
-        face = 1;
-      } else if (a.side === 0) {
-        /* top-right → hang */
-        x = left + a.width - mw * 0.62;
-        y = top - mh * 0.1;
-        pose = "hang";
-        face = 1;
-      } else {
-        /* top-left / costado → cling */
-        x = left - mw * 0.38;
-        y = top - mh * 0.06;
-        pose = "cling";
-        face = -1;
-      }
-
+    function clampToViewport(x, y, mw, mh) {
       /* No tapar WA (abajo-derecha) ni salirse del viewport */
       var maxX = window.innerWidth - mw - 10;
       var maxY = window.innerHeight - mh - 88;
       x = Math.max(4, Math.min(maxX, x));
       y = Math.max(64, Math.min(maxY, y));
-
-      return { x: x - baseLeft, y: y, pose: pose, face: face };
+      return { x: x - baseLeft, y: y };
     }
 
-    function pickPose(settledPose, dist, vel, indexChanged) {
-      if (simple) return "idle";
-      var absV = Math.abs(vel);
-      if (absV > JUMP_VEL || (indexChanged && absV > 420)) return "jump";
-      if (dist > REACH_DIST) return "reach";
-      return settledPose;
+    /* Ancla fija en el borde derecho de la card (sin scaleX) */
+    function pinAt(a, mw, mh, yBias) {
+      var top = a.docTop - window.scrollY;
+      var left = a.docLeft - window.scrollX;
+      var x = left + a.width - mw * 0.62;
+      var y = top - mh * 0.1 + (yBias || 0);
+      return clampToViewport(x, y, mw, mh);
     }
 
-    function applyTransform() {
-      el.style.transform =
-        "translate3d(" + currentX.toFixed(2) + "px," + currentY.toFixed(2) + "px,0)";
-      if (img && !simple) {
-        img.style.transform = "scaleX(" + facing + ")";
-      } else if (img) {
-        img.style.transform = "none";
-      }
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function easeInOut(t) {
+      return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    }
+
+    function pickClimbPose(frac, settled) {
+      if (frac < REACH_FRAC) return settled;
+      if (frac < CLING_FRAC) return "reach";
+      return "cling";
     }
 
     function setTargetsFromScroll() {
       var mw = el.offsetWidth || 56;
       var mh = el.offsetHeight || 60;
-      var index = cardIndex();
-      var indexChanged = index !== activeIndex;
-      var pt = targetFor(index, mw, mh);
+      var prog = cardProgress();
+      var absV = Math.abs(velocity);
+      var fast = !simple && absV >= SLOW_VEL;
+      var lerpAmt = fast ? LERP_FAST : LERP_SLOW;
 
-      /* Arco de salto si vamos rápido hacia otra card */
-      var dist = Math.hypot(pt.x - currentX, pt.y - currentY);
-      var pose = pickPose(pt.pose, dist, velocity, indexChanged);
-      if (pose === "jump") {
-        pt.y -= Math.min(36, 10 + dist * 0.12);
+      if (!anchors.length) {
+        targetX = 8;
+        targetY = 96;
+        setPose(simple ? "idle" : "hang");
+        activeIndex = 0;
+        return lerpAmt;
       }
 
-      targetX = pt.x;
-      targetY = pt.y;
-      facing = pt.face;
-      setPose(pose);
-      activeIndex = index;
+      var a0 = anchors[prog.index];
+      var a1 = anchors[prog.next];
+      var p0 = pinAt(a0, mw, mh, 0);
+      var p1 = pinAt(a1, mw, mh, 0);
+      var pose;
+
+      if (simple) {
+        /* Solo Y entre cards; X siempre al borde derecho */
+        var t = easeInOut(prog.frac);
+        targetX = lerp(p0.x, p1.x, t);
+        targetY = lerp(p0.y, p1.y, t);
+        setPose("idle");
+      } else if (fast) {
+        /* Slide/fall vertical hacia la card activa — sin saltar de lado */
+        var fallBias = velocity > 0
+          ? Math.min(42, 12 + absV * 0.018)
+          : -Math.min(28, 8 + absV * 0.012);
+        var dest = pinAt(anchors[prog.index], mw, mh, fallBias);
+        targetX = dest.x;
+        targetY = dest.y;
+        pose = "jump";
+        setPose(pose);
+      } else {
+        /* Climb suave card-a-card: hang → reach → cling → hang */
+        var u = easeInOut(prog.frac);
+        targetX = lerp(p0.x, p1.x, u);
+        targetY = lerp(p0.y, p1.y, u);
+        if (prog.frac < 0.08 || prog.index === prog.next) {
+          pose = "hang";
+        } else {
+          pose = pickClimbPose(prog.frac, "hang");
+        }
+        setPose(pose);
+      }
+
+      activeIndex = prog.index;
+      return lerpAmt;
+    }
+
+    function applyTransform() {
+      el.style.transform =
+        "translate3d(" + currentX.toFixed(2) + "px," + currentY.toFixed(2) + "px,0)";
+      /* Sin scaleX: la cara queda siempre hacia el mismo lado */
+      if (img) img.style.transform = "none";
     }
 
     function onScroll() {
@@ -422,12 +469,13 @@
 
     function tick() {
       scrollQueued = false;
-      setTargetsFromScroll();
+      var lerpAmt = setTargetsFromScroll();
+      flushPendingPose();
 
       var dx = targetX - currentX;
       var dy = targetY - currentY;
-      currentX += dx * LERP;
-      currentY += dy * LERP;
+      currentX += dx * lerpAmt;
+      currentY += dy * lerpAmt;
       applyTransform();
 
       /* Amortiguar velocity cuando no hay scroll reciente */
@@ -435,16 +483,13 @@
         velocity *= 0.85;
       }
 
-      if (Math.abs(dx) > 0.3 || Math.abs(dy) > 0.3 || Math.abs(velocity) > 40) {
+      if (Math.abs(dx) > 0.3 || Math.abs(dy) > 0.3 || Math.abs(velocity) > 40 || pendingPose) {
         raf = requestAnimationFrame(tick);
       } else {
         currentX = targetX;
         currentY = targetY;
-        /* Al asentarse, pose hang/cling definitiva */
-        if (!simple && anchors.length) {
-          var settled = anchors[activeIndex] && anchors[activeIndex].side === 0 ? "hang" : "cling";
-          setPose(settled);
-        }
+        if (!simple) setPose("hang");
+        flushPendingPose();
         applyTransform();
         raf = 0;
       }
@@ -472,20 +517,19 @@
       el.classList.add("is-static");
       measureBase();
       rebuildAnchors();
-      setPose(simple ? "idle" : "hang");
+      applyPoseNow(simple ? "idle" : "hang");
       var mw0 = el.offsetWidth || 56;
       var mh0 = el.offsetHeight || 60;
-      var pin = targetFor(0, mw0, mh0);
+      var pin = anchors.length ? pinAt(anchors[0], mw0, mh0, 0) : { x: 8, y: 96 };
       currentX = targetX = pin.x;
       currentY = targetY = pin.y;
-      facing = pin.face;
       applyTransform();
       window.addEventListener("resize", scheduleRebuild, { passive: true });
       window.addEventListener("orientationchange", scheduleRebuild, { passive: true });
       return;
     }
 
-    setPose(currentPose);
+    applyPoseNow(currentPose);
 
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", scheduleRebuild, { passive: true });

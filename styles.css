@@ -1144,7 +1144,6 @@ main { position: relative; z-index: 1; }
   height: auto;
   transform-origin: center bottom;
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.22));
-  will-change: transform;
 }
 
 /* Fija (reduced-motion): JS la clava en la primera card, sin animación */
