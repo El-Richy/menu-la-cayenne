@@ -200,6 +200,16 @@ main { position: relative; z-index: 1; }
 .logo {
   display: flex;
   align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.logo-img {
+  width: 52px;
+  height: auto;
+  flex-shrink: 0;
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
 }
 
 .logo-text-wrap {
@@ -1111,6 +1121,75 @@ main { position: relative; z-index: 1; }
 }
 
 .footer-top:hover { opacity: 0.7; }
+
+
+.mascota {
+  position: fixed;
+  left: max(0.25rem, env(safe-area-inset-left, 0px));
+  top: 0;
+  bottom: auto;
+  z-index: 40; /* bajo filtros sticky(50), WA(90) y header(100) */
+  width: 64px;
+  height: auto;
+  pointer-events: none;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  user-select: none;
+  contain: layout style;
+}
+
+.mascota img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: center bottom;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.22));
+  will-change: transform;
+}
+
+/* Fija (reduced-motion): JS la clava en la primera card, sin animación */
+.mascota.is-static {
+  will-change: auto;
+}
+
+.mascota.is-static img {
+  will-change: auto;
+}
+
+@media (max-width: 720px) {
+  .mascota {
+    width: 56px; /* ~48–64px mobile */
+  }
+
+  .logo-img {
+    width: 42px;
+  }
+
+  .logo-script {
+    display: none;
+  }
+
+  .logo-text {
+    font-size: 1.05rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .mascota {
+    width: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mascota {
+    /* Visible pero estática en primera card; JS añade .is-static */
+    will-change: auto;
+  }
+
+  .mascota img {
+    will-change: auto;
+  }
+}
 
 .wa-float {
   position: fixed;
