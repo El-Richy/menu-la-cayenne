@@ -20,6 +20,7 @@
   --shadow-lg: 0 24px 64px rgba(12, 19, 34, 0.28);
   --radius: 14px;
   --font-display: "Cormorant Garamond", "Georgia", serif;
+  --font-sign: "Anton", "Arial Black", Impact, sans-serif;
   --font-script: "Great Vibes", cursive;
   --font-body: "Inter", system-ui, sans-serif;
   --header-h: 76px;
@@ -377,14 +378,31 @@ html.motion .hero-img {
 }
 
 .hero h1 {
-  font-family: var(--font-display);
-  font-size: clamp(3.2rem, 11vw, 6.5rem);
-  font-weight: 600;
-  line-height: 0.95;
-  letter-spacing: 0.08em;
-  color: var(--cream);
-  margin-bottom: 0.35rem;
-  text-shadow: 0 1px 0 rgba(255, 246, 234, 0.35), 0 0 12px rgba(var(--cayenne-rgb), 0.45), 0 0 36px rgba(var(--cayenne-rgb), 0.22);
+  font-family: var(--font-sign);
+  font-size: clamp(3.1rem, 12vw, 6.2rem);
+  font-weight: 400;
+  line-height: 0.86;
+  letter-spacing: 0.045em;
+  color: #ff2a24;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0.15rem auto 0.7rem;
+  padding: 0.1em 0.2em 0.06em;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 46%),
+    #121212;
+  border-radius: 0.06em;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 16px 34px rgba(0, 0, 0, 0.48),
+    0 0 32px rgba(255, 36, 28, 0.32);
+  text-shadow:
+    0 1px 0 #ffb4ae,
+    0 0.045em 0 #c41210,
+    0 0.09em 0 #7a0c0c,
+    0 0.16em 0.1em rgba(0, 0, 0, 0.55),
+    0 0 0.16em rgba(255, 48, 36, 0.9),
+    0 0 0.42em rgba(255, 28, 20, 0.45);
 }
 
 .hero-script {
@@ -1616,7 +1634,11 @@ html:not(.js) .t-stagger-line {
     min-height: 48px;
   }
 
-  .hero h1 { font-size: clamp(2.6rem, 14vw, 3.6rem); }
+  .hero h1 {
+    font-size: clamp(2.35rem, 12.5vw, 3.35rem);
+    letter-spacing: 0.03em;
+    padding-inline: 0.14em;
+  }
 
   .hero-script { font-size: clamp(1.55rem, 7vw, 2.1rem); margin-bottom: 0.85rem; }
 
