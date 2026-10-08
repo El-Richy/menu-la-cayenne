@@ -75,7 +75,7 @@ The user asked to delete the mascot, keep only the menu, review performance, mot
 - Prices `$14.000` / `$20.000` and names `Criolla` / `Opita` unchanged
 - Deleted tracked pose PNGs (~1.7 MB) and untracked `assets/mascota-poses-nuevas/` (~2 MB)
 - Parent correction: dropped duplicate `body::before` grain; moved CSP meta above the inline class script
-- Commit: filled after the work-unit commit
+- Commit: `43e56c8` on `feat/menu-sin-mascota`
 
 ## Next
 
