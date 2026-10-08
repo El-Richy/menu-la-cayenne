@@ -64,7 +64,7 @@ Hero shift, category rules, and card settle only under `html.motion`. No-JS and 
 - No `innerHTML`. No `mascota`. Prices and names unchanged.
 - Parent: leader `translateY(0.28em)`; limonadas in the jugo list are not prefixed with "Jugo de".
 - Browser screenshot not run (Firefox headless could not write a capture).
-- Commit: filled after the work-unit commit.
+- Commit: `2110ae2` on `feat/menu-sin-mascota`.
 
 ## Next
 
