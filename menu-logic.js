@@ -124,12 +124,36 @@
     return n;
   }
 
+  function foldFlavor(text) {
+    return String(text == null ? "" : text)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function drinkBases(flavor) {
+    var key = foldFlavor(flavor);
+    if (
+      key === "limonada natural" ||
+      key === "limonada de panela" ||
+      key === "cerezada" ||
+      key === "hierbabuena"
+    ) {
+      return ["agua"];
+    }
+    if (key === "coco") return ["leche"];
+    return ["agua", "leche"];
+  }
+
   return {
     parsePrice: parsePrice,
     formatMoney: formatMoney,
     statusFromParts: statusFromParts,
     statusAt: statusAt,
     buildMessage: buildMessage,
-    nextQty: nextQty
+    nextQty: nextQty,
+    drinkBases: drinkBases
   };
 });

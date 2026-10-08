@@ -84,4 +84,19 @@ assert.equal(api.nextQty(12, 1), 12);
 assert.equal(api.nextQty(3, 2), 5);
 assert.equal(api.nextQty(11, 5), 12);
 
+assert.deepEqual(api.drinkBases("limonada natural"), ["agua"]);
+assert.deepEqual(api.drinkBases("Limonada de panela"), ["agua"]);
+assert.deepEqual(api.drinkBases("Limónada natural"), ["agua"]);
+assert.deepEqual(api.drinkBases("Cerezada"), ["agua"]);
+assert.deepEqual(api.drinkBases("HIERBABUENA"), ["agua"]);
+assert.deepEqual(api.drinkBases("  hierbabuena  "), ["agua"]);
+assert.deepEqual(api.drinkBases("coco"), ["leche"]);
+assert.deepEqual(api.drinkBases("Coco"), ["leche"]);
+assert.deepEqual(api.drinkBases("frutos rojos"), ["agua", "leche"]);
+assert.deepEqual(api.drinkBases("Frutos Rojos"), ["agua", "leche"]);
+assert.deepEqual(api.drinkBases("Mango"), ["agua", "leche"]);
+assert.deepEqual(api.drinkBases("Guanábana"), ["agua", "leche"]);
+assert.deepEqual(api.drinkBases("Maracuyá"), ["agua", "leche"]);
+assert.deepEqual(api.drinkBases("Fresa"), ["agua", "leche"]);
+
 console.log("menu-logic tests passed");

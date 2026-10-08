@@ -392,14 +392,36 @@
     return name + " en " + base;
   }
 
+  function normalizeFlavor(text) {
+    return String(text || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function limonadaLineName(flavor) {
+    var key = normalizeFlavor(flavor);
+    if (key === "cerezada") return "Limonada cerezada en agua";
+    if (key === "hierbabuena") return "Limonada de hierbabuena en agua";
+    if (key === "coco") return "Limonada de coco en leche";
+    return "Limonada de " + flavor;
+  }
+
   function initOrder() {
     var api = window.LaCayenne;
-    if (!api || typeof api.parsePrice !== "function" || typeof api.nextQty !== "function") return;
+    if (!api || typeof api.parsePrice !== "function" || typeof api.nextQty !== "function" || typeof api.drinkBases !== "function" || typeof api.buildMessage !== "function") return;
 
     var lines = [];
+    var delivery = false;
+    var collapsed = false;
+    var ticketWasOpen = false;
+    var openFrame = 0;
     var binders = [];
     var catalog = {};
-    var STORAGE_KEY = "lacayenne-order-v1";
+    var STORAGE_KEY = "lacayenne-order-v2";
+    var DELIVERY_PRICE = 6000;
 
     function lineKey(name, unit) {
       return name + "\u0000" + String(unit);
@@ -420,8 +442,14 @@
     }
 
     function persist() {
+      if (lines.length === 0) delivery = false;
       try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+          lines: lines.map(function (line) {
+            return { name: line.name, unit: line.unit, qty: line.qty };
+          }),
+          delivery: delivery
+        }));
       } catch (err) {
         return;
       }
@@ -491,9 +519,10 @@
       return true;
     }
 
-    function bindJugo(host, row, flavor, aguaUnit, lecheUnit) {
-      var aguaName = drinkName(flavor, "agua");
-      var lecheName = drinkName(flavor, "leche");
+    function bindJugo(host, row, flavor, aguaUnit, lecheUnit, nameFor) {
+      var label = nameFor || function (base) { return drinkName(flavor, base); };
+      var aguaName = label("agua");
+      var lecheName = label("leche");
       if (!remember(aguaName, aguaUnit) || !remember(lecheName, lecheUnit)) return false;
       var ctl = document.createElement("span");
       ctl.className = "qty-ctl";
@@ -541,6 +570,85 @@
       return true;
     }
 
+    function bindByBases(host, row, flavor, aguaUnit, lecheUnit, nameFor) {
+      var bases = api.drinkBases(flavor);
+      var label = nameFor || function (base) { return drinkName(flavor, base); };
+      if (bases.length === 1) {
+        var base = bases[0] === "leche" ? "leche" : "agua";
+        var unit = base === "leche" ? lecheUnit : aguaUnit;
+        return bindSimple(host, row, label(base), unit);
+      }
+      return bindJugo(host, row, flavor, aguaUnit, lecheUnit, label);
+    }
+
+    function flavorsOf(group) {
+      var flavors = [];
+      if (!group) return flavors;
+      group.querySelectorAll(".flavor-list li").forEach(function (li) {
+        var flavor = flavorName(li);
+        if (flavor) flavors.push(flavor);
+      });
+      return flavors;
+    }
+
+    function drinkGroup(title) {
+      var found = null;
+      document.querySelectorAll(".drink-group").forEach(function (group) {
+        if (!found && plainText(group.querySelector("h4")) === title) found = group;
+      });
+      return found;
+    }
+
+    function bindJarra(row, unit, flavors, nameFor) {
+      var entries = [];
+      flavors.forEach(function (flavor) {
+        var name = nameFor(flavor);
+        if (!remember(name, unit)) return;
+        entries.push({ flavor: flavor, name: name });
+      });
+      if (!entries.length) return false;
+      var ctl = document.createElement("span");
+      ctl.className = "qty-ctl";
+      row.appendChild(ctl);
+      var choicesOpen = false;
+      binders.push(function () {
+        var any = false;
+        var missing = [];
+        clearNode(ctl);
+        entries.forEach(function (entry) {
+          var qty = qtyOf(entry.name, unit);
+          if (qty > 0) {
+            any = true;
+            fillStepper(ctl, entry.name, unit, qty);
+          } else {
+            missing.push(entry);
+          }
+        });
+        row.classList.toggle("is-in-order", any);
+        if (!missing.length) {
+          choicesOpen = false;
+          return;
+        }
+        ctl.appendChild(makeBtn("qty-btn", "Elegir sabor", "+", function () {
+          choicesOpen = !choicesOpen;
+          paintOrder();
+        }));
+        if (!choicesOpen) return;
+        missing.forEach(function (entry) {
+          ctl.appendChild(makeBtn(
+            "qty-choice",
+            "Sumar " + entry.name,
+            entry.flavor,
+            function () {
+              choicesOpen = false;
+              changeQty(entry.name, unit, 1);
+            }
+          ));
+        });
+      });
+      return true;
+    }
+
     document.querySelectorAll(".menu-card").forEach(function (card) {
       var name = plainText(card.querySelector("h4"));
       var unit = api.parsePrice(plainText(card.querySelector(".price")));
@@ -553,15 +661,45 @@
       bindSimple(row, row, name, unit);
     });
 
+    var juiceFlavors = flavorsOf(drinkGroup("Jugos naturales"));
+    var limonadaFlavors = flavorsOf(drinkGroup("Limonadas"));
+
     document.querySelectorAll(".drink-rows li").forEach(function (row) {
       var name = plainText(row.querySelector("span"));
       var unit = api.parsePrice(plainText(row.querySelector(".price")));
+      if (name === "Jarra jugo agua") {
+        bindJarra(row, unit, juiceFlavors, function (flavor) {
+          return "Jarra de " + flavor + " en agua";
+        });
+        return;
+      }
+      if (name === "Jarra jugo leche") {
+        bindJarra(row, unit, juiceFlavors.filter(function (flavor) {
+          var bases = api.drinkBases(flavor);
+          return !(bases.length === 1 && bases[0] === "agua");
+        }), function (flavor) {
+          return "Jarra de " + flavor + " en leche";
+        });
+        return;
+      }
+      if (name === "Jarra limonadas") {
+        bindJarra(row, unit, limonadaFlavors, function (flavor) {
+          return "Jarra de " + flavor.toLocaleLowerCase("es");
+        });
+        return;
+      }
       bindSimple(row, row, name, unit);
     });
 
     document.querySelectorAll(".flavor-special").forEach(function (row) {
       var name = plainText(row.querySelector(".flavor-special-name"));
       var unit = api.parsePrice(plainText(row.querySelector(".price")));
+      if (normalizeFlavor(name) === "frutos rojos") {
+        bindJugo(row, row, name, unit, unit, function (base) {
+          return name + " en " + base;
+        });
+        return;
+      }
       bindSimple(row, row, name, unit);
     });
 
@@ -572,12 +710,12 @@
         var agua = strongs[0] ? api.parsePrice(strongs[0].textContent) : null;
         var leche = strongs[1] ? api.parsePrice(strongs[1].textContent) : null;
         group.querySelectorAll(".flavor-list li").forEach(function (li) {
-          bindJugo(li, li, flavorName(li), agua, leche);
+          bindByBases(li, li, flavorName(li), agua, leche);
         });
       } else if (title === "Limonadas") {
         var unit = strongs[0] ? api.parsePrice(strongs[0].textContent) : null;
         group.querySelectorAll(".flavor-list li").forEach(function (li) {
-          bindSimple(li, li, "Limonada de " + flavorName(li), unit);
+          bindSimple(li, li, limonadaLineName(flavorName(li)), unit);
         });
       }
     });
@@ -596,14 +734,15 @@
       } catch (err) {
         return;
       }
-      if (!Array.isArray(parsed)) return;
-      parsed.forEach(function (item) {
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed) || !Array.isArray(parsed.lines)) return;
+      parsed.lines.forEach(function (item) {
         if (!item || typeof item.name !== "string") return;
         var unit = Number(item.unit);
         if (!catalog[lineKey(item.name, unit)]) return;
         var qty = api.nextQty(0, Number(item.qty) || 0);
         if (qty > 0) lines.push({ name: item.name, unit: unit, qty: qty });
       });
+      delivery = lines.length > 0 && parsed.delivery === true;
     }
 
     var ticket = document.createElement("div");
@@ -611,32 +750,83 @@
     ticket.className = "order-ticket";
     ticket.setAttribute("role", "region");
     ticket.setAttribute("aria-label", "Tu pedido");
-    ticket.hidden = true;
+    ticket.setAttribute("aria-hidden", "true");
+    ticket.inert = true;
+
+    var bar = document.createElement("div");
+    bar.className = "order-ticket-bar";
 
     var title = document.createElement("p");
     title.className = "order-ticket-title";
     title.textContent = "Tu pedido";
-    ticket.appendChild(title);
+    bar.appendChild(title);
+
+    var countEl = document.createElement("p");
+    countEl.className = "order-ticket-count";
+    bar.appendChild(countEl);
+
+    var totalEl = document.createElement("p");
+    totalEl.className = "order-ticket-total";
+    bar.appendChild(totalEl);
+
+    var toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "order-ticket-toggle";
+    toggle.addEventListener("click", function () {
+      collapsed = !collapsed;
+      renderTicket();
+    });
+    bar.appendChild(toggle);
+    ticket.appendChild(bar);
 
     var list = document.createElement("ul");
     list.className = "order-ticket-list";
     ticket.appendChild(list);
 
-    var totalEl = document.createElement("p");
-    totalEl.className = "order-ticket-total";
-    ticket.appendChild(totalEl);
+    var deliveryBtn = document.createElement("button");
+    deliveryBtn.type = "button";
+    deliveryBtn.className = "order-ticket-delivery";
+    deliveryBtn.addEventListener("click", function () {
+      delivery = !delivery;
+      persist();
+      renderTicket();
+    });
+    ticket.appendChild(deliveryBtn);
 
     var link = document.createElement("a");
-    link.className = "btn btn-primary";
+    link.className = "btn btn-primary order-ticket-wa";
     link.textContent = "Pedir por WhatsApp";
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     ticket.appendChild(link);
     document.body.appendChild(ticket);
 
+    function syncTicketOpen(open) {
+      if (!open) {
+        openFrame += 1;
+        ticket.classList.remove("is-open");
+        ticket.inert = true;
+        ticket.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("has-order");
+        return;
+      }
+      document.body.classList.add("has-order");
+      if (ticket.classList.contains("is-open")) return;
+      var frame = ++openFrame;
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          if (frame !== openFrame) return;
+          ticket.inert = false;
+          ticket.setAttribute("aria-hidden", "false");
+          ticket.classList.add("is-open");
+        });
+      });
+    }
+
     function renderTicket() {
       clearNode(list);
-      var total = 0;
+      var productTotal = 0;
+      var count = 0;
       lines.forEach(function (line) {
         var row = document.createElement("li");
         row.className = "order-ticket-row";
@@ -654,14 +844,31 @@
           changeQty(line.name, line.unit, -1);
         }));
         list.appendChild(row);
-        total += line.unit * line.qty;
+        productTotal += line.unit * line.qty;
+        count += line.qty;
       });
-      totalEl.textContent = "Total: " + api.formatMoney(total);
-      link.href = "https://wa.me/573184003076?text=" + encodeURIComponent(api.buildMessage(lines));
       var open = lines.length > 0;
-      ticket.hidden = !open;
-      ticket.classList.toggle("is-open", open);
-      document.body.classList.toggle("has-order", open);
+      if (!open) {
+        collapsed = false;
+        ticketWasOpen = false;
+      } else if (!ticketWasOpen) {
+        collapsed = false;
+        ticketWasOpen = true;
+      }
+      var total = productTotal + (delivery ? DELIVERY_PRICE : 0);
+      countEl.textContent = count === 1 ? "1 ítem" : count + " ítems";
+      totalEl.textContent = "Total: " + api.formatMoney(total);
+      deliveryBtn.setAttribute("aria-pressed", delivery ? "true" : "false");
+      deliveryBtn.textContent = delivery ? "Quitar domicilio" : "Domicilio · " + api.formatMoney(DELIVERY_PRICE);
+      toggle.textContent = collapsed ? "Ver pedido" : "Ocultar";
+      toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      ticket.classList.toggle("is-collapsed", open && collapsed);
+      var messageLines = lines.map(function (line) {
+        return { name: line.name, unit: line.unit, qty: line.qty };
+      });
+      if (delivery) messageLines.push({ name: "Domicilio", unit: DELIVERY_PRICE, qty: 1 });
+      link.href = "https://wa.me/573184003076?text=" + encodeURIComponent(api.buildMessage(messageLines));
+      syncTicketOpen(open);
     }
 
     function paintOrder() {
