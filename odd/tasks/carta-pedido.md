@@ -29,7 +29,7 @@ The live page showed the sign overflowing its plaque, a crowded hero, a bottom t
 - `node --check script.js` and `node --check menu-logic.js`: pass.
 - Parent spot-check: sign `line-height: 1.05`, ticket fixed under the header, delivery 6000 outside product lines, gaseosas and Hit rows replaced, jarra rows choose a flavor.
 - Browser screenshot not run.
-- Commit: filled after the work-unit commit.
+- Commit: `f84708c` on `main`.
 
 ## Next
 
