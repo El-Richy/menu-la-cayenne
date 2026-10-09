@@ -1410,6 +1410,11 @@ body.has-order .wa-float {
     visibility 0s linear 420ms;
 }
 
+.order-ticket.is-expanded {
+  max-height: min(78dvh, 42rem);
+  width: min(34rem, calc(100vw - 0.75rem));
+}
+
 .order-ticket.is-open {
   transform: translate(-50%, 0) scale(1);
   opacity: 1;
@@ -1448,7 +1453,9 @@ body.has-order .wa-float {
 }
 
 .order-ticket-toggle,
-.order-ticket-delivery {
+.order-ticket-expand,
+.order-ticket-delivery,
+.order-ticket-pickup {
   border: 1px solid rgba(var(--gold-rgb), 0.75);
   background: rgba(255, 255, 255, 0.34);
   color: var(--navy);
@@ -1456,16 +1463,35 @@ body.has-order .wa-float {
   line-height: 1.2;
 }
 
-.order-ticket-toggle {
+.order-ticket-toggle,
+.order-ticket-expand {
   flex-shrink: 0;
   padding: 0.38rem 0.7rem;
   font-size: 0.72rem;
 }
 
-.order-ticket-delivery {
-  flex-shrink: 0;
-  width: 100%;
-  padding: 0.55rem 0.8rem;
+.order-ticket-actions {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.order-ticket-protein {
+  display: block;
+  margin-top: 0.28rem;
+  border: 0;
+  background: none;
+  color: var(--gold-muted);
+  font-size: 0.72rem;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  padding: 0;
+}
+
+.order-ticket-delivery,
+.order-ticket-pickup {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.55rem 0.7rem;
   font-size: 0.78rem;
 }
 
@@ -1474,10 +1500,14 @@ body.has-order .wa-float {
 }
 
 .order-ticket.is-collapsed .order-ticket-list,
-.order-ticket.is-collapsed .order-ticket-delivery,
+.order-ticket.is-collapsed .order-ticket-actions,
 .order-ticket.is-collapsed .order-ticket-clear,
 .order-ticket.is-collapsed .order-ticket-wa {
   display: none;
+}
+
+.order-ticket-pickup[aria-pressed="true"] {
+  background: rgba(var(--gold-rgb), 0.18);
 }
 
 .order-ticket-list {

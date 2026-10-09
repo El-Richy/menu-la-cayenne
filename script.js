@@ -427,7 +427,7 @@
     var key = normalizeFlavor(flavor);
     if (key === "cerezada") return "Limonada cerezada en agua";
     if (key === "hierbabuena") return "Limonada de hierbabuena en agua";
-    if (key === "coco") return "Limonada de coco en leche";
+    if (key === "coco") return "Limonada de coco";
     return "Limonada de " + flavor;
   }
 
@@ -438,12 +438,15 @@
     var lines = [];
     var extras = [];
     var delivery = false;
+    var pickup = false;
+    var expanded = false;
     var collapsed = false;
     var ticketWasOpen = false;
     var openFrame = 0;
     var binders = [];
     var catalog = {};
     var burgerCatalog = {};
+    var lineMeta = {};
     var assignOpenKey = "";
     var STORAGE_KEY = "lacayenne-order-v2";
     var DELIVERY_PRICE = 6000;
@@ -460,10 +463,29 @@
       return true;
     }
 
-    function burgerLines() {
+    function lineTitle(line) {
+      return line.protein ? line.name + " (" + line.protein + ")" : line.name;
+    }
+
+    function canTakeTocineta(line) {
+      if (line.kind === "burger" || line.group === "entradas" || line.group === "dogs") return true;
+      var name = normalizeFlavor(line.name);
+      return name === "choripapa" || name === "choripapa mega" || name === "pataconada" || name === "mazorcada";
+    }
+
+    function canTakeQueso(line) {
+      if (line.kind === "burger" || line.group === "dogs") return true;
+      var name = normalizeFlavor(line.name);
+      return name === "choripapa" || name === "choripapa mega";
+    }
+
+    function hostsFor(extraName) {
+      var key = normalizeFlavor(extraName);
       var found = [];
       lines.forEach(function (line) {
-        if (line.kind === "burger") found.push(line);
+        if (key === "tocineta" && canTakeTocineta(line)) found.push(line);
+        else if (key === "queso gratinado" && canTakeQueso(line)) found.push(line);
+        else if (key !== "tocineta" && key !== "queso gratinado" && line.kind === "burger") found.push(line);
       });
       return found;
     }
@@ -472,7 +494,7 @@
       if (!hostKey) return "";
       var i;
       for (i = 0; i < lines.length; i++) {
-        if (lineKey(lines[i].name, lines[i].unit) === hostKey) return lines[i].name;
+        if (lineKey(lines[i].name, lines[i].unit) === hostKey) return lineTitle(lines[i]);
       }
       return "";
     }
@@ -494,7 +516,7 @@
     function releaseOrphanExtras() {
       var hosts = {};
       var changed = false;
-      burgerLines().forEach(function (line) {
+      lines.forEach(function (line) {
         hosts[lineKey(line.name, line.unit)] = true;
       });
       extras.forEach(function (extra) {
@@ -533,12 +555,17 @@
     }
 
     function persist() {
-      if (lines.length === 0 && extras.length === 0) delivery = false;
+      if (lines.length === 0 && extras.length === 0) {
+        delivery = false;
+        pickup = false;
+      }
       try {
         sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
           lines: lines.map(function (line) {
             var stored = { name: line.name, unit: line.unit, qty: line.qty };
             if (line.kind === "burger") stored.kind = "burger";
+            if (line.group) stored.group = line.group;
+            if (line.protein) stored.protein = line.protein;
             return stored;
           }),
           extras: extras.map(function (extra) {
@@ -549,7 +576,8 @@
               hostKey: extra.hostKey || null
             };
           }),
-          delivery: delivery
+          delivery: delivery,
+          pickup: pickup
         }));
       } catch (err) {
         return;
@@ -565,7 +593,10 @@
           if (next === 0) lines.splice(i, 1);
           else {
             lines[i].qty = next;
-            if (kind === "burger") lines[i].kind = "burger";
+            var kept = lineMeta[lineKey(name, unit)] || {};
+            if (kind === "burger" || kept.kind === "burger") lines[i].kind = "burger";
+            if (kept.group) lines[i].group = kept.group;
+            if (kept.protein && !lines[i].protein) lines[i].protein = "chorizo";
           }
           if (delta > 0 && next > current && origin) flyToTicket(origin);
           persist();
@@ -575,7 +606,10 @@
       }
       if (next <= 0) return;
       var created = { name: name, unit: unit, qty: next };
-      if (kind === "burger" || burgerCatalog[lineKey(name, unit)]) created.kind = "burger";
+      var meta = lineMeta[lineKey(name, unit)] || {};
+      if (kind === "burger" || meta.kind === "burger" || burgerCatalog[lineKey(name, unit)]) created.kind = "burger";
+      if (meta.group) created.group = meta.group;
+      if (meta.protein) created.protein = "chorizo";
       lines.push(created);
       if (delta > 0 && next > current && origin) flyToTicket(origin);
       persist();
@@ -668,6 +702,12 @@
 
     function bindSimple(host, row, name, unit, kind) {
       if (!remember(name, unit, kind)) return false;
+      var category = host.closest ? host.closest(".menu-category") : null;
+      lineMeta[lineKey(name, unit)] = {
+        kind: kind,
+        group: category ? category.getAttribute("data-category") : "",
+        protein: /chorizo o salchicha/i.test(host.textContent || "")
+      };
       var ctl = document.createElement("span");
       ctl.className = "qty-ctl";
       host.appendChild(ctl);
@@ -705,8 +745,8 @@
           ctl.appendChild(num);
         }
         ctl.appendChild(makeBtn("qty-btn", "Sumar " + name, "+", function (origin) {
-          var burgers = burgerLines();
-          if (!burgers.length) {
+          var hosts = hostsFor(name);
+          if (!hosts.length) {
             choicesOpen = false;
             addExtra(name, unit, null, origin);
             return;
@@ -715,21 +755,17 @@
           paintOrder();
         }));
         if (!choicesOpen) return;
-        burgerLines().forEach(function (burger) {
+        hostsFor(name).forEach(function (host) {
           ctl.appendChild(makeBtn(
             "qty-choice",
-            "Sumar " + name + " para " + burger.name,
-            burger.name,
+            "Sumar " + name + " para " + lineTitle(host),
+            lineTitle(host),
             function (origin) {
               choicesOpen = false;
-              addExtra(name, unit, lineKey(burger.name, burger.unit), origin);
+              addExtra(name, unit, lineKey(host.name, host.unit), origin);
             }
           ));
         });
-        ctl.appendChild(makeBtn("qty-choice", "Sumar " + name + " pendiente", "Pendiente", function (origin) {
-          choicesOpen = false;
-          addExtra(name, unit, null, origin);
-        }));
       });
       return true;
     }
@@ -966,7 +1002,12 @@
         var qty = api.nextQty(0, Number(item.qty) || 0);
         if (qty <= 0) return;
         var restored = { name: item.name, unit: unit, qty: qty };
-        if (burgerCatalog[key]) restored.kind = "burger";
+        var meta = lineMeta[key] || {};
+        if (burgerCatalog[key] || meta.kind === "burger") restored.kind = "burger";
+        if (meta.group) restored.group = meta.group;
+        if (item.group) restored.group = item.group;
+        if (item.protein === "salchicha" || item.protein === "chorizo") restored.protein = item.protein;
+        else if (meta.protein) restored.protein = "chorizo";
         lines.push(restored);
       });
       var storedExtras = Array.isArray(parsed.extras) ? parsed.extras : [];
@@ -984,6 +1025,7 @@
         });
       });
       delivery = (lines.length > 0 || extras.length > 0) && parsed.delivery === true;
+      pickup = (lines.length > 0 || extras.length > 0) && parsed.pickup === true && !delivery;
     }
 
     var ticket = document.createElement("div");
@@ -1018,6 +1060,15 @@
       renderTicket();
     });
     bar.appendChild(toggle);
+    var expandBtn = document.createElement("button");
+    expandBtn.type = "button";
+    expandBtn.className = "order-ticket-expand";
+    expandBtn.addEventListener("click", function () {
+      expanded = !expanded;
+      if (expanded) collapsed = false;
+      renderTicket();
+    });
+    bar.appendChild(expandBtn);
     ticket.appendChild(bar);
 
     var list = document.createElement("ul");
@@ -1027,12 +1078,26 @@
     var deliveryBtn = document.createElement("button");
     deliveryBtn.type = "button";
     deliveryBtn.className = "order-ticket-delivery";
+    var actions = document.createElement("div");
+    actions.className = "order-ticket-actions";
     deliveryBtn.addEventListener("click", function () {
       delivery = !delivery;
+      if (delivery) pickup = false;
       persist();
       renderTicket();
     });
-    ticket.appendChild(deliveryBtn);
+    actions.appendChild(deliveryBtn);
+    var pickupBtn = document.createElement("button");
+    pickupBtn.type = "button";
+    pickupBtn.className = "order-ticket-pickup";
+    pickupBtn.addEventListener("click", function () {
+      pickup = !pickup;
+      if (pickup) delivery = false;
+      persist();
+      renderTicket();
+    });
+    actions.appendChild(pickupBtn);
+    ticket.appendChild(actions);
 
     var clearBtn = document.createElement("button");
     clearBtn.type = "button";
@@ -1042,6 +1107,8 @@
       lines = [];
       extras = [];
       delivery = false;
+      pickup = false;
+      expanded = false;
       collapsed = false;
       ticketWasOpen = false;
       assignOpenKey = "";
@@ -1132,7 +1199,19 @@
         qty.textContent = String(line.qty);
         var name = document.createElement("span");
         name.className = "order-ticket-name";
-        name.textContent = line.name;
+        name.textContent = lineTitle(line);
+        if (line.protein) {
+          name.appendChild(makeBtn(
+            "order-ticket-protein",
+            "Cambiar " + line.name + " a " + (line.protein === "salchicha" ? "chorizo" : "salchicha"),
+            line.protein === "salchicha" ? "Cambiar a chorizo" : "Cambiar a salchicha",
+            function () {
+              line.protein = line.protein === "salchicha" ? "chorizo" : "salchicha";
+              persist();
+              renderTicket();
+            }
+          ));
+        }
         var money = document.createElement("span");
         money.textContent = api.formatMoney(line.unit * line.qty);
         row.appendChild(qty);
@@ -1176,13 +1255,13 @@
             renderTicket();
           }));
           if (assignOpenKey === identity) {
-            burgerLines().forEach(function (burger) {
+            hostsFor(extra.name).forEach(function (host) {
               assign.appendChild(makeBtn(
                 "qty-choice",
-                "Asignar " + extra.name + " a " + burger.name,
-                burger.name,
+                "Asignar " + extra.name + " a " + lineTitle(host),
+                lineTitle(host),
                 function () {
-                  assignExtra(extra, lineKey(burger.name, burger.unit));
+                  assignExtra(extra, lineKey(host.name, host.unit));
                 }
               ));
             });
@@ -1207,11 +1286,16 @@
       totalEl.textContent = "Total: " + api.formatMoney(total);
       deliveryBtn.setAttribute("aria-pressed", delivery ? "true" : "false");
       deliveryBtn.textContent = delivery ? "Quitar domicilio" : "Domicilio · " + api.formatMoney(DELIVERY_PRICE);
+      pickupBtn.setAttribute("aria-pressed", pickup ? "true" : "false");
+      pickupBtn.textContent = pickup ? "Quitar paso por él" : "Paso por él";
+      expandBtn.textContent = expanded ? "Reducir" : "Ampliar";
+      expandBtn.setAttribute("aria-pressed", expanded ? "true" : "false");
       toggle.textContent = collapsed ? "Ver pedido" : "Ocultar";
       toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
       ticket.classList.toggle("is-collapsed", open && collapsed);
+      ticket.classList.toggle("is-expanded", open && expanded);
       var messageLines = lines.map(function (line) {
-        return { name: line.name, unit: line.unit, qty: line.qty };
+        return { name: lineTitle(line), unit: line.unit, qty: line.qty };
       });
       extras.forEach(function (extra) {
         messageLines.push({
@@ -1221,7 +1305,9 @@
         });
       });
       if (delivery) messageLines.push({ name: "Domicilio", unit: DELIVERY_PRICE, qty: 1 });
-      link.href = "https://wa.me/573184003076?text=" + encodeURIComponent(api.buildMessage(messageLines));
+      var message = api.buildMessage(messageLines);
+      if (pickup) message += "\n\nPaso por el pedido.";
+      link.href = "https://wa.me/573184003076?text=" + encodeURIComponent(message);
       syncTicketOpen(open);
       placeTicket();
     }
