@@ -414,12 +414,15 @@
     if (!api || typeof api.parsePrice !== "function" || typeof api.nextQty !== "function" || typeof api.drinkBases !== "function" || typeof api.buildMessage !== "function") return;
 
     var lines = [];
+    var extras = [];
     var delivery = false;
     var collapsed = false;
     var ticketWasOpen = false;
     var openFrame = 0;
     var binders = [];
     var catalog = {};
+    var burgerCatalog = {};
+    var assignOpenKey = "";
     var STORAGE_KEY = "lacayenne-order-v2";
     var DELIVERY_PRICE = 6000;
 
@@ -427,10 +430,76 @@
       return name + "\u0000" + String(unit);
     }
 
-    function remember(name, unit) {
+    function remember(name, unit, kind) {
       if (!name || typeof unit !== "number" || !isFinite(unit)) return false;
-      catalog[lineKey(name, unit)] = true;
+      var key = lineKey(name, unit);
+      catalog[key] = true;
+      if (kind === "burger") burgerCatalog[key] = true;
       return true;
+    }
+
+    function burgerLines() {
+      var found = [];
+      lines.forEach(function (line) {
+        if (line.kind === "burger") found.push(line);
+      });
+      return found;
+    }
+
+    function hostName(hostKey) {
+      if (!hostKey) return "";
+      var i;
+      for (i = 0; i < lines.length; i++) {
+        if (lineKey(lines[i].name, lines[i].unit) === hostKey) return lines[i].name;
+      }
+      return "";
+    }
+
+    function extraTicketName(extra) {
+      var host = hostName(extra.hostKey);
+      return extra.name + " \u00b7 " + (host || "sin asignar");
+    }
+
+    function extraMessageName(extra) {
+      var host = hostName(extra.hostKey);
+      return host ? extra.name + " para " + host : extra.name + " \u00b7 sin asignar";
+    }
+
+    function extraIdentity(extra) {
+      return extra.name + "\u0000" + extra.unit + "\u0000" + (extra.hostKey || "");
+    }
+
+    function releaseOrphanExtras() {
+      var hosts = {};
+      var changed = false;
+      burgerLines().forEach(function (line) {
+        hosts[lineKey(line.name, line.unit)] = true;
+      });
+      extras.forEach(function (extra) {
+        if (extra.hostKey && !hosts[extra.hostKey]) {
+          extra.hostKey = null;
+          changed = true;
+        }
+      });
+      var merged = [];
+      extras.forEach(function (extra) {
+        var found = null;
+        var i;
+        for (i = 0; i < merged.length; i++) {
+          if (merged[i].name === extra.name && merged[i].unit === extra.unit && merged[i].hostKey === extra.hostKey) {
+            found = merged[i];
+            break;
+          }
+        }
+        if (found) {
+          found.qty = api.nextQty(found.qty, extra.qty);
+          changed = true;
+        } else {
+          merged.push(extra);
+        }
+      });
+      extras = merged;
+      return changed;
     }
 
     function qtyOf(name, unit) {
@@ -442,11 +511,21 @@
     }
 
     function persist() {
-      if (lines.length === 0) delivery = false;
+      if (lines.length === 0 && extras.length === 0) delivery = false;
       try {
         sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
           lines: lines.map(function (line) {
-            return { name: line.name, unit: line.unit, qty: line.qty };
+            var stored = { name: line.name, unit: line.unit, qty: line.qty };
+            if (line.kind === "burger") stored.kind = "burger";
+            return stored;
+          }),
+          extras: extras.map(function (extra) {
+            return {
+              name: extra.name,
+              unit: extra.unit,
+              qty: extra.qty,
+              hostKey: extra.hostKey || null
+            };
           }),
           delivery: delivery
         }));
@@ -455,20 +534,85 @@
       }
     }
 
-    function changeQty(name, unit, delta) {
-      var next = api.nextQty(qtyOf(name, unit), delta);
+    function changeQty(name, unit, delta, kind, origin) {
+      var current = qtyOf(name, unit);
+      var next = api.nextQty(current, delta);
       var i;
       for (i = 0; i < lines.length; i++) {
         if (lines[i].name === name && lines[i].unit === unit) {
           if (next === 0) lines.splice(i, 1);
-          else lines[i].qty = next;
+          else {
+            lines[i].qty = next;
+            if (kind === "burger") lines[i].kind = "burger";
+          }
+          if (delta > 0 && next > current && origin) flyToTicket(origin);
           persist();
           paintOrder();
           return;
         }
       }
       if (next <= 0) return;
-      lines.push({ name: name, unit: unit, qty: next });
+      var created = { name: name, unit: unit, qty: next };
+      if (kind === "burger" || burgerCatalog[lineKey(name, unit)]) created.kind = "burger";
+      lines.push(created);
+      if (delta > 0 && next > current && origin) flyToTicket(origin);
+      persist();
+      paintOrder();
+    }
+
+    function addExtra(name, unit, hostKey, origin) {
+      var key = hostKey || null;
+      var i;
+      for (i = 0; i < extras.length; i++) {
+        if (extras[i].name === name && extras[i].unit === unit && (extras[i].hostKey || null) === key) {
+          var current = extras[i].qty;
+          var next = api.nextQty(current, 1);
+          if (next > current) {
+            extras[i].qty = next;
+            if (origin) flyToTicket(origin);
+          }
+          persist();
+          paintOrder();
+          return;
+        }
+      }
+      var createdQty = api.nextQty(0, 1);
+      if (createdQty <= 0) return;
+      extras.push({ name: name, unit: unit, qty: createdQty, hostKey: key });
+      if (origin) flyToTicket(origin);
+      persist();
+      paintOrder();
+    }
+
+    function changeExtra(name, unit, hostKey, delta, origin) {
+      var key = hostKey || null;
+      var i;
+      for (i = 0; i < extras.length; i++) {
+        if (extras[i].name === name && extras[i].unit === unit && (extras[i].hostKey || null) === key) {
+          var current = extras[i].qty;
+          var next = api.nextQty(current, delta);
+          if (next === 0) extras.splice(i, 1);
+          else extras[i].qty = next;
+          if (delta > 0 && next > current && origin) flyToTicket(origin);
+          persist();
+          paintOrder();
+          return;
+        }
+      }
+    }
+
+    function assignExtra(extra, hostKey) {
+      var target = null;
+      extras.forEach(function (item) {
+        if (item !== extra && item.name === extra.name && item.unit === extra.unit && (item.hostKey || null) === hostKey) target = item;
+      });
+      if (target) {
+        target.qty = api.nextQty(target.qty, extra.qty);
+        extras.splice(extras.indexOf(extra), 1);
+      } else {
+        extra.hostKey = hostKey;
+      }
+      assignOpenKey = "";
       persist();
       paintOrder();
     }
@@ -482,26 +626,26 @@
       btn.addEventListener("click", function (event) {
         event.preventDefault();
         event.stopPropagation();
-        onClick();
+        onClick(event.currentTarget);
       });
       return btn;
     }
 
-    function fillStepper(ctl, name, unit, qty) {
+    function fillStepper(ctl, name, unit, qty, kind) {
       ctl.appendChild(makeBtn("qty-btn", "Restar " + name, "\u2212", function () {
-        changeQty(name, unit, -1);
+        changeQty(name, unit, -1, kind);
       }));
       var num = document.createElement("span");
       num.className = "qty-num";
       num.textContent = String(qty);
       ctl.appendChild(num);
-      ctl.appendChild(makeBtn("qty-btn", "Sumar " + name, "+", function () {
-        changeQty(name, unit, 1);
+      ctl.appendChild(makeBtn("qty-btn", "Sumar " + name, "+", function (origin) {
+        changeQty(name, unit, 1, kind, origin);
       }));
     }
 
-    function bindSimple(host, row, name, unit) {
-      if (!remember(name, unit)) return false;
+    function bindSimple(host, row, name, unit, kind) {
+      if (!remember(name, unit, kind)) return false;
       var ctl = document.createElement("span");
       ctl.className = "qty-ctl";
       host.appendChild(ctl);
@@ -509,12 +653,61 @@
         var qty = qtyOf(name, unit);
         row.classList.toggle("is-in-order", qty > 0);
         clearNode(ctl);
-        if (qty > 0) fillStepper(ctl, name, unit, qty);
+        if (qty > 0) fillStepper(ctl, name, unit, qty, kind);
         else {
-          ctl.appendChild(makeBtn("qty-btn", "Sumar " + name, "+", function () {
-            changeQty(name, unit, 1);
+          ctl.appendChild(makeBtn("qty-btn", "Sumar " + name, "+", function (origin) {
+            changeQty(name, unit, 1, kind, origin);
           }));
         }
+      });
+      return true;
+    }
+
+    function bindAdicion(row, name, unit) {
+      if (!remember(name, unit)) return false;
+      var ctl = document.createElement("span");
+      ctl.className = "qty-ctl";
+      row.appendChild(ctl);
+      var choicesOpen = false;
+      binders.push(function () {
+        var total = 0;
+        extras.forEach(function (extra) {
+          if (extra.name === name && extra.unit === unit) total += extra.qty;
+        });
+        row.classList.toggle("is-in-order", total > 0);
+        clearNode(ctl);
+        if (total > 0) {
+          var num = document.createElement("span");
+          num.className = "qty-num";
+          num.textContent = String(total);
+          ctl.appendChild(num);
+        }
+        ctl.appendChild(makeBtn("qty-btn", "Sumar " + name, "+", function (origin) {
+          var burgers = burgerLines();
+          if (!burgers.length) {
+            choicesOpen = false;
+            addExtra(name, unit, null, origin);
+            return;
+          }
+          choicesOpen = !choicesOpen;
+          paintOrder();
+        }));
+        if (!choicesOpen) return;
+        burgerLines().forEach(function (burger) {
+          ctl.appendChild(makeBtn(
+            "qty-choice",
+            "Sumar " + name + " para " + burger.name,
+            burger.name,
+            function (origin) {
+              choicesOpen = false;
+              addExtra(name, unit, lineKey(burger.name, burger.unit), origin);
+            }
+          ));
+        });
+        ctl.appendChild(makeBtn("qty-choice", "Sumar " + name + " pendiente", "Pendiente", function (origin) {
+          choicesOpen = false;
+          addExtra(name, unit, null, origin);
+        }));
       });
       return true;
     }
@@ -549,9 +742,9 @@
             "qty-choice",
             "Sumar " + aguaName,
             "Agua \u00b7 " + api.formatMoney(aguaUnit),
-            function () {
+            function (origin) {
               choicesOpen = false;
-              changeQty(aguaName, aguaUnit, 1);
+              changeQty(aguaName, aguaUnit, 1, undefined, origin);
             }
           ));
         }
@@ -560,9 +753,9 @@
             "qty-choice",
             "Sumar " + lecheName,
             "Leche \u00b7 " + api.formatMoney(lecheUnit),
-            function () {
+            function (origin) {
               choicesOpen = false;
-              changeQty(lecheName, lecheUnit, 1);
+              changeQty(lecheName, lecheUnit, 1, undefined, origin);
             }
           ));
         }
@@ -639,9 +832,9 @@
             "qty-choice",
             "Sumar " + entry.name,
             entry.flavor,
-            function () {
+            function (origin) {
               choicesOpen = false;
-              changeQty(entry.name, unit, 1);
+              changeQty(entry.name, unit, 1, undefined, origin);
             }
           ));
         });
@@ -652,13 +845,15 @@
     document.querySelectorAll(".menu-card").forEach(function (card) {
       var name = plainText(card.querySelector("h4"));
       var unit = api.parsePrice(plainText(card.querySelector(".price")));
-      bindSimple(card, card, name, unit);
+      var category = card.closest(".menu-category");
+      var kind = category && category.getAttribute("data-category") === "hamburguesas" ? "burger" : undefined;
+      bindSimple(card, card, name, unit, kind);
     });
 
     document.querySelectorAll(".adicion").forEach(function (row) {
       var name = plainText(row.querySelector("strong"));
       var unit = api.parsePrice(row.textContent);
-      bindSimple(row, row, name, unit);
+      bindAdicion(row, name, unit);
     });
 
     var juiceFlavors = flavorsOf(drinkGroup("Jugos naturales"));
@@ -685,6 +880,12 @@
       if (name === "Jarra limonadas") {
         bindJarra(row, unit, limonadaFlavors, function (flavor) {
           return "Jarra de " + flavor.toLocaleLowerCase("es");
+        });
+        return;
+      }
+      if (name === "Hit") {
+        bindJarra(row, unit, ["Mora", "Mango", "Frutos Tropicales", "Naranja Piña"], function (flavor) {
+          return "Hit " + flavor;
         });
         return;
       }
@@ -738,11 +939,29 @@
       parsed.lines.forEach(function (item) {
         if (!item || typeof item.name !== "string") return;
         var unit = Number(item.unit);
+        var key = lineKey(item.name, unit);
+        if (!catalog[key]) return;
+        var qty = api.nextQty(0, Number(item.qty) || 0);
+        if (qty <= 0) return;
+        var restored = { name: item.name, unit: unit, qty: qty };
+        if (burgerCatalog[key]) restored.kind = "burger";
+        lines.push(restored);
+      });
+      var storedExtras = Array.isArray(parsed.extras) ? parsed.extras : [];
+      storedExtras.forEach(function (item) {
+        if (!item || typeof item.name !== "string") return;
+        var unit = Number(item.unit);
         if (!catalog[lineKey(item.name, unit)]) return;
         var qty = api.nextQty(0, Number(item.qty) || 0);
-        if (qty > 0) lines.push({ name: item.name, unit: unit, qty: qty });
+        if (qty <= 0) return;
+        extras.push({
+          name: item.name,
+          unit: unit,
+          qty: qty,
+          hostKey: typeof item.hostKey === "string" && item.hostKey ? item.hostKey : null
+        });
       });
-      delivery = lines.length > 0 && parsed.delivery === true;
+      delivery = (lines.length > 0 || extras.length > 0) && parsed.delivery === true;
     }
 
     var ticket = document.createElement("div");
@@ -793,6 +1012,22 @@
     });
     ticket.appendChild(deliveryBtn);
 
+    var clearBtn = document.createElement("button");
+    clearBtn.type = "button";
+    clearBtn.className = "order-ticket-clear";
+    clearBtn.textContent = "Vaciar pedido";
+    clearBtn.addEventListener("click", function () {
+      lines = [];
+      extras = [];
+      delivery = false;
+      collapsed = false;
+      ticketWasOpen = false;
+      assignOpenKey = "";
+      persist();
+      paintOrder();
+    });
+    ticket.appendChild(clearBtn);
+
     var link = document.createElement("a");
     link.className = "btn btn-primary order-ticket-wa";
     link.textContent = "Pedir por WhatsApp";
@@ -800,6 +1035,46 @@
     link.rel = "noopener noreferrer";
     ticket.appendChild(link);
     document.body.appendChild(ticket);
+
+    function flyToTicket(origin) {
+      if (reduceMotion.matches || !origin || typeof origin.getBoundingClientRect !== "function") return;
+      var from = origin.getBoundingClientRect();
+      if (!from.width && !from.height) return;
+      var to = ticket.getBoundingClientRect();
+      var dot = document.createElement("span");
+      dot.className = "order-fly";
+      dot.setAttribute("aria-hidden", "true");
+      var startX = from.left + from.width / 2;
+      var startY = from.top + from.height / 2;
+      var endX = to.left + to.width / 2;
+      var endY = to.top + Math.min(22, Math.max(to.height, 0) / 2);
+      dot.style.left = startX + "px";
+      dot.style.top = startY + "px";
+      document.body.appendChild(dot);
+      var dx = endX - startX;
+      var dy = endY - startY;
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          dot.style.transform = "translate(" + dx + "px, " + dy + "px)";
+          dot.style.opacity = "0";
+        });
+      });
+      var removed = false;
+      function removeDot() {
+        if (removed) return;
+        removed = true;
+        if (dot.parentNode) dot.parentNode.removeChild(dot);
+      }
+      dot.addEventListener("transitionend", removeDot);
+      setTimeout(removeDot, 620);
+    }
+
+    function syncOrderOffset() {
+      var open = lines.length > 0 || extras.length > 0;
+      document.documentElement.style.setProperty("--order-h", open ? (ticket.offsetHeight + 10) + "px" : "0px");
+    }
+
+    window.addEventListener("resize", syncOrderOffset);
 
     function syncTicketOpen(open) {
       if (!open) {
@@ -819,13 +1094,20 @@
           ticket.inert = false;
           ticket.setAttribute("aria-hidden", "false");
           ticket.classList.add("is-open");
+          syncOrderOffset();
         });
       });
+    }
+
+    function appendQtyButtons(row, label, onMinus, onPlus) {
+      row.appendChild(makeBtn("qty-btn", "Quitar una " + label, "\u2212", onMinus));
+      row.appendChild(makeBtn("qty-btn", "Sumar " + label, "+", onPlus));
     }
 
     function renderTicket() {
       clearNode(list);
       var productTotal = 0;
+      var extraTotal = 0;
       var count = 0;
       lines.forEach(function (line) {
         var row = document.createElement("li");
@@ -840,22 +1122,71 @@
         row.appendChild(qty);
         row.appendChild(name);
         row.appendChild(money);
-        row.appendChild(makeBtn("qty-btn", "Quitar una " + line.name, "\u2212", function () {
-          changeQty(line.name, line.unit, -1);
-        }));
+        appendQtyButtons(row, line.name, function () {
+          changeQty(line.name, line.unit, -1, line.kind);
+        }, function (origin) {
+          changeQty(line.name, line.unit, 1, line.kind, origin);
+        });
         list.appendChild(row);
         productTotal += line.unit * line.qty;
         count += line.qty;
       });
-      var open = lines.length > 0;
+      extras.forEach(function (extra) {
+        var label = extraTicketName(extra);
+        var hostKey = extra.hostKey || null;
+        var row = document.createElement("li");
+        row.className = "order-ticket-row";
+        var qty = document.createElement("span");
+        qty.textContent = String(extra.qty);
+        var name = document.createElement("span");
+        name.className = "order-ticket-name";
+        name.textContent = label;
+        var money = document.createElement("span");
+        money.textContent = api.formatMoney(extra.unit * extra.qty);
+        row.appendChild(qty);
+        row.appendChild(name);
+        row.appendChild(money);
+        appendQtyButtons(row, label, function () {
+          changeExtra(extra.name, extra.unit, hostKey, -1);
+        }, function (origin) {
+          changeExtra(extra.name, extra.unit, hostKey, 1, origin);
+        });
+        if (!hostKey) {
+          var assign = document.createElement("div");
+          assign.className = "order-ticket-assign";
+          var identity = extraIdentity(extra);
+          assign.appendChild(makeBtn("qty-choice", "Asignar " + extra.name, "Asignar", function () {
+            assignOpenKey = assignOpenKey === identity ? "" : identity;
+            renderTicket();
+          }));
+          if (assignOpenKey === identity) {
+            burgerLines().forEach(function (burger) {
+              assign.appendChild(makeBtn(
+                "qty-choice",
+                "Asignar " + extra.name + " a " + burger.name,
+                burger.name,
+                function () {
+                  assignExtra(extra, lineKey(burger.name, burger.unit));
+                }
+              ));
+            });
+          }
+          row.appendChild(assign);
+        }
+        list.appendChild(row);
+        extraTotal += extra.unit * extra.qty;
+        count += extra.qty;
+      });
+      var open = lines.length > 0 || extras.length > 0;
       if (!open) {
         collapsed = false;
         ticketWasOpen = false;
+        assignOpenKey = "";
       } else if (!ticketWasOpen) {
         collapsed = false;
         ticketWasOpen = true;
       }
-      var total = productTotal + (delivery ? DELIVERY_PRICE : 0);
+      var total = productTotal + extraTotal + (delivery ? DELIVERY_PRICE : 0);
       countEl.textContent = count === 1 ? "1 ítem" : count + " ítems";
       totalEl.textContent = "Total: " + api.formatMoney(total);
       deliveryBtn.setAttribute("aria-pressed", delivery ? "true" : "false");
@@ -866,12 +1197,21 @@
       var messageLines = lines.map(function (line) {
         return { name: line.name, unit: line.unit, qty: line.qty };
       });
+      extras.forEach(function (extra) {
+        messageLines.push({
+          name: extraMessageName(extra),
+          unit: extra.unit,
+          qty: extra.qty
+        });
+      });
       if (delivery) messageLines.push({ name: "Domicilio", unit: DELIVERY_PRICE, qty: 1 });
       link.href = "https://wa.me/573184003076?text=" + encodeURIComponent(api.buildMessage(messageLines));
       syncTicketOpen(open);
+      syncOrderOffset();
     }
 
     function paintOrder() {
+      if (releaseOrphanExtras()) persist();
       binders.forEach(function (paint) { paint(); });
       renderTicket();
     }
