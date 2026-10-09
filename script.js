@@ -25,17 +25,14 @@
     var top = headerH + 8;
     if (filtersRect && filtersRect.top <= headerH + 2) {
       top = filtersRect.bottom + 8;
-    } else {
-      var openStatus = document.getElementById("openStatus");
-      if (openStatus && !openStatus.hidden) {
-        var statusRect = openStatus.getBoundingClientRect();
-        var viewH = window.innerHeight || document.documentElement.clientHeight;
-        if (statusRect.width > 0 && statusRect.height > 0 && statusRect.bottom > 0 && statusRect.top < viewH) {
-          top = Math.max(headerH + 8, statusRect.bottom + 10);
-        }
-      }
     }
     document.documentElement.style.setProperty("--ticket-top", top + "px");
+    var ticketEl = document.getElementById("orderTicket");
+    var ticketH = 0;
+    if (document.body.classList.contains("has-order") && ticketEl) {
+      ticketH = ticketEl.offsetHeight;
+    }
+    document.documentElement.style.setProperty("--ticket-h", ticketH + "px");
   }
 
   function onScroll() {
