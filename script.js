@@ -425,8 +425,8 @@
 
   function limonadaLineName(flavor) {
     var key = normalizeFlavor(flavor);
-    if (key === "cerezada") return "Limonada cerezada en agua";
-    if (key === "hierbabuena") return "Limonada de hierbabuena en agua";
+    if (key === "cerezada") return "Limonada cerezada";
+    if (key === "hierbabuena") return "Limonada de hierbabuena";
     if (key === "coco") return "Limonada de coco";
     return "Limonada de " + flavor;
   }
@@ -744,18 +744,24 @@
           num.textContent = String(total);
           ctl.appendChild(num);
         }
-        ctl.appendChild(makeBtn("qty-btn", "Sumar " + name, "+", function (origin) {
-          var hosts = hostsFor(name);
-          if (!hosts.length) {
-            choicesOpen = false;
-            addExtra(name, unit, null, origin);
-            return;
+        var hosts = hostsFor(name);
+        var canAssign = hosts.length > 0;
+        ctl.appendChild(makeBtn(
+          "qty-btn",
+          choicesOpen && canAssign ? "Ocultar opciones de " + name : "Sumar " + name,
+          choicesOpen && canAssign ? "\u2212" : "+",
+          function (origin) {
+            if (!canAssign) {
+              choicesOpen = false;
+              addExtra(name, unit, null, origin);
+              return;
+            }
+            choicesOpen = !choicesOpen;
+            paintOrder();
           }
-          choicesOpen = !choicesOpen;
-          paintOrder();
-        }));
+        ));
         if (!choicesOpen) return;
-        hostsFor(name).forEach(function (host) {
+        hosts.forEach(function (host) {
           ctl.appendChild(makeBtn(
             "qty-choice",
             "Sumar " + name + " para " + lineTitle(host),
@@ -790,10 +796,15 @@
           choicesOpen = false;
           return;
         }
-        ctl.appendChild(makeBtn("qty-btn", "Sumar " + flavor, "+", function () {
-          choicesOpen = !choicesOpen;
-          paintOrder();
-        }));
+        ctl.appendChild(makeBtn(
+          "qty-btn",
+          choicesOpen ? "Ocultar opciones de " + flavor : "Sumar " + flavor,
+          choicesOpen ? "\u2212" : "+",
+          function () {
+            choicesOpen = !choicesOpen;
+            paintOrder();
+          }
+        ));
         if (!choicesOpen) return;
         if (aguaQty === 0) {
           ctl.appendChild(makeBtn(
@@ -880,10 +891,15 @@
           choicesOpen = false;
           return;
         }
-        ctl.appendChild(makeBtn("qty-btn", "Elegir sabor", "+", function () {
-          choicesOpen = !choicesOpen;
-          paintOrder();
-        }));
+        ctl.appendChild(makeBtn(
+          "qty-btn",
+          choicesOpen ? "Ocultar sabores" : "Elegir sabor",
+          choicesOpen ? "\u2212" : "+",
+          function () {
+            choicesOpen = !choicesOpen;
+            paintOrder();
+          }
+        ));
         if (!choicesOpen) return;
         missing.forEach(function (entry) {
           ctl.appendChild(makeBtn(
