@@ -16,11 +16,34 @@
     document.documentElement.classList.add("motion");
   }
 
+  function placeTicket() {
+    var headerEl = document.querySelector(".site-header");
+    var measured = headerEl ? headerEl.getBoundingClientRect().height : 0;
+    var headerH = measured || 76;
+    var filtersEl = document.querySelector(".menu-filters");
+    var filtersRect = filtersEl ? filtersEl.getBoundingClientRect() : null;
+    var top = headerH + 8;
+    if (filtersRect && filtersRect.top <= headerH + 2) {
+      top = filtersRect.bottom + 8;
+    } else {
+      var openStatus = document.getElementById("openStatus");
+      if (openStatus && !openStatus.hidden) {
+        var statusRect = openStatus.getBoundingClientRect();
+        var viewH = window.innerHeight || document.documentElement.clientHeight;
+        if (statusRect.width > 0 && statusRect.height > 0 && statusRect.bottom > 0 && statusRect.top < viewH) {
+          top = Math.max(headerH + 8, statusRect.bottom + 10);
+        }
+      }
+    }
+    document.documentElement.style.setProperty("--ticket-top", top + "px");
+  }
+
   function onScroll() {
     if (scrollFrame) return;
     scrollFrame = requestAnimationFrame(function () {
       scrollFrame = 0;
       if (header) header.classList.toggle("is-scrolled", window.scrollY > 8);
+      placeTicket();
       if (!hero || !document.documentElement.classList.contains("motion")) return;
       if (hero.getBoundingClientRect().bottom <= 0) return;
       var cover = hero.clientHeight * 0.06;
@@ -29,6 +52,7 @@
     });
   }
   window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", placeTicket);
   onScroll();
 
   var toggle = document.getElementById("navToggle");
@@ -292,6 +316,7 @@
       text.textContent = status.label + " \u00b7 " + status.detail;
       el.hidden = false;
       el.setAttribute("data-state", status.state);
+      placeTicket();
     }
     var kicker = document.querySelector(".card-kicker");
     if (kicker) kicker.textContent = status.label;
@@ -1069,13 +1094,6 @@
       setTimeout(removeDot, 620);
     }
 
-    function syncOrderOffset() {
-      var open = lines.length > 0 || extras.length > 0;
-      document.documentElement.style.setProperty("--order-h", open ? (ticket.offsetHeight + 10) + "px" : "0px");
-    }
-
-    window.addEventListener("resize", syncOrderOffset);
-
     function syncTicketOpen(open) {
       if (!open) {
         openFrame += 1;
@@ -1083,6 +1101,7 @@
         ticket.inert = true;
         ticket.setAttribute("aria-hidden", "true");
         document.body.classList.remove("has-order");
+        placeTicket();
         return;
       }
       document.body.classList.add("has-order");
@@ -1094,7 +1113,7 @@
           ticket.inert = false;
           ticket.setAttribute("aria-hidden", "false");
           ticket.classList.add("is-open");
-          syncOrderOffset();
+          placeTicket();
         });
       });
     }
@@ -1207,7 +1226,7 @@
       if (delivery) messageLines.push({ name: "Domicilio", unit: DELIVERY_PRICE, qty: 1 });
       link.href = "https://wa.me/573184003076?text=" + encodeURIComponent(api.buildMessage(messageLines));
       syncTicketOpen(open);
-      syncOrderOffset();
+      placeTicket();
     }
 
     function paintOrder() {

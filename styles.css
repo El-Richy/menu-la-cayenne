@@ -557,7 +557,7 @@ html.motion .hero-img {
   justify-content: flex-start;
   margin: 0 auto 2.25rem;
   top: var(--header-h);
-  z-index: 50;
+  z-index: 85;
   padding: 4px;
   max-width: 100%;
   overflow-x: auto;
@@ -569,10 +569,6 @@ html.motion .hero-img {
   backdrop-filter: blur(18px) saturate(1.25);
   -webkit-backdrop-filter: blur(18px) saturate(1.25);
   box-shadow: 0 8px 28px rgba(12, 19, 34, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.55);
-}
-
-body.has-order .menu-filters {
-  top: calc(var(--header-h) + var(--order-h, 0px));
 }
 
 .menu-filters::-webkit-scrollbar { display: none; }
@@ -674,6 +670,51 @@ html.motion .category-title.is-in::before {
   gap: 1.15rem;
   margin-top: 1.4rem;
   align-items: stretch;
+}
+
+.menu-category[data-category="entradas"] .menu-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.menu-category[data-category="entradas"] .menu-grid > .menu-card:nth-child(2),
+.menu-category[data-category="entradas"] .menu-grid > .menu-card:nth-child(3) {
+  order: 0;
+}
+
+.menu-category[data-category="entradas"] .menu-grid > .menu-card:nth-child(1) {
+  order: 1;
+  grid-column: 1 / -1;
+}
+
+.menu-category[data-category="entradas"] .menu-grid > .menu-card:nth-child(2) .menu-card-top,
+.menu-category[data-category="entradas"] .menu-grid > .menu-card:nth-child(3) .menu-card-top {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.menu-category[data-category="entradas"] .menu-grid > .menu-card:nth-child(2) .menu-card-top:has(.price)::before,
+.menu-category[data-category="entradas"] .menu-grid > .menu-card:nth-child(3) .menu-card-top:has(.price)::before {
+  display: none;
+}
+
+.menu-category[data-category="entradas"] .menu-grid > .menu-card:nth-child(2) h4,
+.menu-category[data-category="entradas"] .menu-grid > .menu-card:nth-child(3) h4 {
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.menu-category[data-category="entradas"] .menu-grid > .menu-card:nth-child(2) .price,
+.menu-category[data-category="entradas"] .menu-grid > .menu-card:nth-child(3) .price {
+  font-size: 1.05rem;
+  text-align: center;
+}
+
+.menu-category[data-category="entradas"] .menu-grid > .menu-card:nth-child(2) .qty-ctl,
+.menu-category[data-category="entradas"] .menu-grid > .menu-card:nth-child(3) .qty-ctl {
+  align-self: center;
+  justify-content: center;
 }
 
 .menu-grid > .t-tilt {
@@ -1337,7 +1378,7 @@ body.has-order .wa-float {
 
 .order-ticket {
   position: fixed;
-  top: calc(var(--header-h) + 0.45rem);
+  top: var(--ticket-top, calc(var(--header-h) + 0.45rem));
   left: 50%;
   width: min(28rem, calc(100vw - 1.25rem));
   z-index: 80;
@@ -1778,56 +1819,6 @@ html:not(.js) .t-stagger-line {
   }
 
   .menu-grid { grid-template-columns: 1fr; gap: 0.85rem; }
-
-  .menu-category[data-category="entradas"] .menu-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.45rem;
-  }
-
-  .menu-category[data-category="entradas"] .menu-card {
-    min-width: 0;
-    min-height: 0;
-    padding: 0.45rem 0.35rem;
-    gap: 0.3rem;
-  }
-
-  .menu-category[data-category="entradas"] .menu-card-top {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.12rem;
-  }
-
-  .menu-category[data-category="entradas"] .menu-card-top:has(.price)::before {
-    display: none;
-  }
-
-  .menu-category[data-category="entradas"] .menu-card h4 {
-    font-size: 0.92rem;
-    line-height: 1.15;
-    overflow-wrap: anywhere;
-  }
-
-  .menu-category[data-category="entradas"] .price {
-    font-size: 0.72rem;
-    white-space: normal;
-  }
-
-  .menu-category[data-category="entradas"] .ings {
-    gap: 0.2rem;
-  }
-
-  .menu-category[data-category="entradas"] .ing {
-    font-size: 0.62rem;
-    line-height: 1.2;
-    padding: 0.1rem 0.28rem;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    max-width: 100%;
-  }
-
-  .menu-category[data-category="entradas"] .qty-ctl {
-    align-self: flex-start;
-  }
 
   .menu-card {
     min-height: 0;

@@ -114,7 +114,7 @@
       total += lineTotal;
       rows.push(line.qty + " × " + line.name + " — " + formatMoney(lineTotal));
     }
-    return "Hola, quiero pedir en La Cayenne:\n" + rows.join("\n") + "\n\nTotal: " + formatMoney(total);
+    return "Hola, quiero pedir:\n\n" + rows.join("\n") + "\n\nTotal: " + formatMoney(total);
   }
 
   function nextQty(current, delta) {

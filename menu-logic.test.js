@@ -76,7 +76,7 @@ assert.equal(
     { name: "Criolla", unit: 20000, qty: 2 },
     { name: "Papa francesa", unit: 7000, qty: 1 }
   ]),
-  "Hola, quiero pedir en La Cayenne:\n2 × Criolla — $40.000\n1 × Papa francesa — $7.000\n\nTotal: $47.000"
+  "Hola, quiero pedir:\n\n2 × Criolla — $40.000\n1 × Papa francesa — $7.000\n\nTotal: $47.000"
 );
 
 assert.equal(api.nextQty(0, -1), 0);
