@@ -433,7 +433,7 @@
 
   function initOrder() {
     var api = window.LaCayenne;
-    if (!api || typeof api.parsePrice !== "function" || typeof api.nextQty !== "function" || typeof api.drinkBases !== "function" || typeof api.buildMessage !== "function") return;
+    if (!api || typeof api.parsePrice !== "function" || typeof api.nextQty !== "function" || typeof api.drinkBases !== "function" || typeof api.buildMessage !== "function" || typeof api.whatsAppHref !== "function") return;
 
     var lines = [];
     var extras = [];
@@ -1310,20 +1310,27 @@
       toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
       ticket.classList.toggle("is-collapsed", open && collapsed);
       ticket.classList.toggle("is-expanded", open && expanded);
-      var messageLines = lines.map(function (line) {
-        return { name: lineTitle(line), unit: line.unit, qty: line.qty };
-      });
-      extras.forEach(function (extra) {
-        messageLines.push({
-          name: extraMessageName(extra),
-          unit: extra.unit,
-          qty: extra.qty
+      var message = "";
+      if (open) {
+        var messageLines = lines.map(function (line) {
+          return { name: lineTitle(line), unit: line.unit, qty: line.qty };
         });
+        extras.forEach(function (extra) {
+          messageLines.push({
+            name: extraMessageName(extra),
+            unit: extra.unit,
+            qty: extra.qty
+          });
+        });
+        if (delivery) messageLines.push({ name: "Domicilio", unit: DELIVERY_PRICE, qty: 1 });
+        message = api.buildMessage(messageLines);
+        if (pickup) message += "\n\nPaso por el pedido.";
+      }
+      var href = api.whatsAppHref(message);
+      link.href = href;
+      document.querySelectorAll('a[href*="wa.me/"]').forEach(function (anchor) {
+        anchor.href = href;
       });
-      if (delivery) messageLines.push({ name: "Domicilio", unit: DELIVERY_PRICE, qty: 1 });
-      var message = api.buildMessage(messageLines);
-      if (pickup) message += "\n\nPaso por el pedido.";
-      link.href = "https://wa.me/573184003076?text=" + encodeURIComponent(message);
       syncTicketOpen(open);
       placeTicket();
     }

@@ -104,6 +104,15 @@
     });
   }
 
+  var WHATSAPP_NUMBER = "573184003076";
+  var WHATSAPP_GREETING = "Hola, quiero hacer un pedido en La Cayenne";
+
+  function whatsAppHref(message) {
+    var text = message == null ? "" : String(message);
+    if (!text.trim()) text = WHATSAPP_GREETING;
+    return "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(text);
+  }
+
   function buildMessage(lines) {
     var rows = [];
     var total = 0;
@@ -153,6 +162,7 @@
     statusFromParts: statusFromParts,
     statusAt: statusAt,
     buildMessage: buildMessage,
+    whatsAppHref: whatsAppHref,
     nextQty: nextQty,
     drinkBases: drinkBases
   };

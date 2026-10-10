@@ -79,6 +79,30 @@ assert.equal(
   "Hola, quiero pedir:\n\n2 × Criolla — $40.000\n1 × Papa francesa — $7.000\n\nTotal: $47.000"
 );
 
+var whatsAppGreeting = "Hola, quiero hacer un pedido en La Cayenne";
+var whatsAppGreetingHref = "https://wa.me/573184003076?text=" + encodeURIComponent(whatsAppGreeting);
+
+assert.equal(api.whatsAppHref(""), whatsAppGreetingHref);
+assert.equal(api.whatsAppHref(null), whatsAppGreetingHref);
+assert.equal(api.whatsAppHref("   "), whatsAppGreetingHref);
+assert.equal(api.whatsAppHref("\n\t "), whatsAppGreetingHref);
+
+var orderMessage = api.buildMessage([
+  { name: "Criolla", unit: 20000, qty: 1 }
+]);
+assert.equal(
+  api.whatsAppHref(orderMessage),
+  "https://wa.me/573184003076?text=" + encodeURIComponent(orderMessage)
+);
+assert.equal(
+  api.whatsAppHref(orderMessage).indexOf(encodeURIComponent(whatsAppGreeting)),
+  -1
+);
+assert.equal(
+  api.whatsAppHref("  Hola, pedido  "),
+  "https://wa.me/573184003076?text=" + encodeURIComponent("  Hola, pedido  ")
+);
+
 assert.equal(api.nextQty(0, -1), 0);
 assert.equal(api.nextQty(12, 1), 12);
 assert.equal(api.nextQty(3, 2), 5);
