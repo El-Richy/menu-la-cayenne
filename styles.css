@@ -1501,8 +1501,7 @@ body.has-order .wa-float {
 
 .order-ticket.is-collapsed .order-ticket-list,
 .order-ticket.is-collapsed .order-ticket-actions,
-.order-ticket.is-collapsed .order-ticket-clear,
-.order-ticket.is-collapsed .order-ticket-wa {
+.order-ticket.is-collapsed .order-ticket-clear {
   display: none;
 }
 
