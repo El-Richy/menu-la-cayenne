@@ -79,7 +79,7 @@ assert.equal(
   "Hola, quiero pedir:\n\n2 × Criolla — $40.000\n1 × Papa francesa — $7.000\n\nTotal: $47.000"
 );
 
-var whatsAppGreeting = "Hola, quiero hacer un pedido en La Cayenne";
+var whatsAppGreeting = "Hola, quiero hacer un pedido";
 var whatsAppGreetingHref = "https://wa.me/573184003076?text=" + encodeURIComponent(whatsAppGreeting);
 
 assert.equal(api.whatsAppHref(""), whatsAppGreetingHref);

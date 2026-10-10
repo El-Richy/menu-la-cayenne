@@ -105,7 +105,7 @@
   }
 
   var WHATSAPP_NUMBER = "573184003076";
-  var WHATSAPP_GREETING = "Hola, quiero hacer un pedido en La Cayenne";
+  var WHATSAPP_GREETING = "Hola, quiero hacer un pedido";
 
   function whatsAppHref(message) {
     var text = message == null ? "" : String(message);

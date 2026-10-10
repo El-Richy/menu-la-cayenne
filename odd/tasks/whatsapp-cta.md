@@ -6,10 +6,10 @@ Every WhatsApp link sends the assembled order when the cart has items, and the f
 
 ## Decisions
 
-- One href helper. Empty or missing message uses `Hola, quiero hacer un pedido en La Cayenne`.
-- Nav, hero, phone, contact button, float, and ticket share that href.
+- One href helper. Empty or missing message uses `Hola, quiero hacer un pedido`.
+- Only the ticket link sends the assembled order. Nav, hero, phone, contact, and float always send the greeting.
 - HTML empty links get the greeting as the no-JS fallback.
-- When the ticket is collapsed, keep `.order-ticket-wa` visible. Leave the float hidden while an order is open.
+- Collapsing the ticket hides the order button again, so the menu stays visible. The float stays hidden while an order is open.
 - Do not touch catalog binding, extras, canvas, hours, or other audit debt.
 
 ## Tasks
@@ -31,6 +31,7 @@ Every WhatsApp link sends the assembled order when the cart has items, and the f
 - Browser not run.
 - T1 commit: `90128c7` on `fix/whatsapp-order-cta`.
 - T2 commit: `b99e7a6` on `fix/whatsapp-order-cta`.
+- Correction: only the ticket sends the order. Other links keep the shorter greeting. The collapsed ticket hides the order button again.
 
 ## Next
 

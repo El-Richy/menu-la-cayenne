@@ -1326,11 +1326,7 @@
         message = api.buildMessage(messageLines);
         if (pickup) message += "\n\nPaso por el pedido.";
       }
-      var href = api.whatsAppHref(message);
-      link.href = href;
-      document.querySelectorAll('a[href*="wa.me/"]').forEach(function (anchor) {
-        anchor.href = href;
-      });
+      link.href = api.whatsAppHref(message);
       syncTicketOpen(open);
       placeTicket();
     }
