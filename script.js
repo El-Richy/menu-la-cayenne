@@ -325,70 +325,57 @@
     if (!document.hidden) paintStatus();
   });
 
-  function siblingIndex(el) {
-    var parent = el.parentElement;
-    if (!parent) return 0;
-    var seen = 0;
-    var child = parent.firstElementChild;
-    while (child) {
-      if (child.matches(".menu-card, .drink-group, .adicion, .contacto-card")) {
-        if (child === el) return Math.min(seen, 6);
-        seen += 1;
-      }
-      child = child.nextElementSibling;
-    }
-    return 0;
-  }
-
-  function portionVisible(el) {
-    var rect = el.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return 0;
-    var viewH = window.innerHeight || document.documentElement.clientHeight;
-    var viewW = window.innerWidth || document.documentElement.clientWidth;
-    var visH = Math.min(rect.bottom, viewH) - Math.max(rect.top, 0);
-    var visW = Math.min(rect.right, viewW) - Math.max(rect.left, 0);
-    if (visH <= 0 || visW <= 0) return 0;
-    return (visH * visW) / (rect.width * rect.height);
-  }
-
   function setupMotion() {
     if (!document.documentElement.classList.contains("motion")) return;
     var titles = document.querySelectorAll(".category-title");
     var settle = document.querySelectorAll(".menu-card, .drink-group, .adicion, .contacto-card");
 
-    settle.forEach(function (el) {
-      el.style.transitionDelay = (siblingIndex(el) * 40) + "ms";
-    });
-
-    if (typeof IntersectionObserver !== "function") {
-      titles.forEach(function (el) { el.classList.add("is-in"); });
-      settle.forEach(function (el) { el.classList.add("is-in"); });
-      return;
+    function nearView(el) {
+      var rect = el.getBoundingClientRect();
+      var viewH = window.innerHeight || document.documentElement.clientHeight;
+      return rect.bottom > 0 && rect.top < viewH + viewH * 0.8;
     }
 
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add("is-in");
-        io.unobserve(entry.target);
-      });
-    }, { threshold: 0.18 });
+    function markShown(el) {
+      if (el.classList.contains("is-in")) return;
+      if (!nearView(el)) return;
+      el.classList.add("is-in");
+      if (io) io.unobserve(el);
+    }
 
-    titles.forEach(function (el) { io.observe(el); });
-    settle.forEach(function (el) { io.observe(el); });
+    function revealNear() {
+      titles.forEach(markShown);
+      settle.forEach(markShown);
+    }
 
-    revealSettled = function () {
-      requestAnimationFrame(function () {
-        function markShown(el) {
-          if (el.classList.contains("is-in")) return;
-          if (portionVisible(el) <= 0) return;
-          el.classList.add("is-in");
-          io.unobserve(el);
-        }
-        titles.forEach(markShown);
-        settle.forEach(markShown);
+    var io = null;
+    if (typeof IntersectionObserver === "function") {
+      io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("is-in");
+          io.unobserve(entry.target);
+        });
+      }, { rootMargin: "0px 0px 80% 0px", threshold: 0 });
+      titles.forEach(function (el) { io.observe(el); });
+      settle.forEach(function (el) { io.observe(el); });
+    } else {
+      titles.forEach(function (el) { el.classList.add("is-in"); });
+      settle.forEach(function (el) { el.classList.add("is-in"); });
+    }
+
+    var revealFrame = 0;
+    function scheduleReveal() {
+      if (revealFrame) return;
+      revealFrame = requestAnimationFrame(function () {
+        revealFrame = 0;
+        revealNear();
       });
-    };
+    }
+
+    scheduleReveal();
+    revealSettled = scheduleReveal;
+    window.addEventListener("scroll", scheduleReveal, { passive: true });
   }
 
   setupMotion();
@@ -1147,18 +1134,28 @@
     ticket.appendChild(link);
     document.body.appendChild(ticket);
 
+    function flyTargetRect() {
+      var foot = ticket.querySelector(".order-ticket-foot-total");
+      var footRect = foot ? foot.getBoundingClientRect() : null;
+      if (footRect && footRect.width && footRect.height) return footRect;
+      var head = ticket.querySelector(".order-ticket-bar .order-ticket-total");
+      var headRect = head ? head.getBoundingClientRect() : null;
+      if (headRect && headRect.width && headRect.height) return headRect;
+      return ticket.getBoundingClientRect();
+    }
+
     function flyToTicket(origin) {
       if (reduceMotion.matches || !origin || typeof origin.getBoundingClientRect !== "function") return;
       var from = origin.getBoundingClientRect();
       if (!from.width && !from.height) return;
-      var to = ticket.getBoundingClientRect();
+      var to = flyTargetRect();
       var dot = document.createElement("span");
       dot.className = "order-fly";
       dot.setAttribute("aria-hidden", "true");
       var startX = from.left + from.width / 2;
       var startY = from.top + from.height / 2;
       var endX = to.left + to.width / 2;
-      var endY = to.top + Math.min(22, Math.max(to.height, 0) / 2);
+      var endY = to.top + to.height / 2;
       dot.style.left = startX + "px";
       dot.style.top = startY + "px";
       document.body.appendChild(dot);

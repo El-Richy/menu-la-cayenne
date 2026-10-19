@@ -649,7 +649,7 @@ html.motion .hero-img {
 html.motion .category-title::before {
   transform: scaleX(0);
   transform-origin: left center;
-  transition: transform 500ms var(--ease);
+  transition: transform 220ms var(--ease);
 }
 
 html.motion .category-title.is-in::before {
@@ -1623,8 +1623,7 @@ html.motion .drink-group,
 html.motion .adicion,
 html.motion .contacto-card {
   transition:
-    opacity 500ms var(--ease),
-    transform 500ms var(--ease),
+    transform 180ms var(--ease),
     box-shadow var(--duration-fast) var(--ease-smooth-out),
     border-color var(--duration-fast) var(--ease-smooth-out);
 }
@@ -1633,8 +1632,7 @@ html.motion .menu-card:not(.is-in),
 html.motion .drink-group:not(.is-in),
 html.motion .adicion:not(.is-in),
 html.motion .contacto-card:not(.is-in) {
-  opacity: 0;
-  transform: translateY(16px);
+  transform: translateY(6px);
 }
 
 html.motion .t-tilt-card.is-tilting {
