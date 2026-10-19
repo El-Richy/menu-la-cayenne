@@ -1075,7 +1075,6 @@
       collapsed = !collapsed;
       renderTicket();
     });
-    bar.appendChild(toggle);
     var expandBtn = document.createElement("button");
     expandBtn.type = "button";
     expandBtn.className = "order-ticket-expand";
@@ -1085,6 +1084,7 @@
       renderTicket();
     });
     bar.appendChild(expandBtn);
+    bar.appendChild(toggle);
     ticket.appendChild(bar);
 
     var list = document.createElement("ul");

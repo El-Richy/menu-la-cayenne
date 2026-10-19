@@ -1517,11 +1517,11 @@ body.has-order .wa-float {
   display: none;
 }
 
-.order-ticket.is-expanded:not(.is-collapsed) .order-ticket-bar .order-ticket-total {
+.order-ticket.is-open:not(.is-collapsed) .order-ticket-bar .order-ticket-total {
   display: none;
 }
 
-.order-ticket.is-expanded:not(.is-collapsed) .order-ticket-toggle {
+.order-ticket.is-open:not(.is-collapsed) .order-ticket-expand {
   margin-left: auto;
 }
 
@@ -1575,7 +1575,7 @@ body.has-order .wa-float {
   color: var(--cayenne);
 }
 
-.order-ticket.is-expanded:not(.is-collapsed) .order-ticket-foot-total {
+.order-ticket.is-open:not(.is-collapsed) .order-ticket-foot-total {
   display: block;
 }
 
