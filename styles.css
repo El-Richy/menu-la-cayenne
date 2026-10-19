@@ -1412,7 +1412,6 @@ body.has-order .wa-float {
 
 .order-ticket.is-expanded {
   max-height: min(78dvh, 42rem);
-  width: min(34rem, calc(100vw - 0.75rem));
 }
 
 .order-ticket.is-open {
@@ -1454,6 +1453,7 @@ body.has-order .wa-float {
 
 .order-ticket-toggle,
 .order-ticket-expand,
+.order-ticket-clear,
 .order-ticket-delivery,
 .order-ticket-pickup {
   border: 1px solid rgba(var(--gold-rgb), 0.75);
@@ -1464,10 +1464,12 @@ body.has-order .wa-float {
 }
 
 .order-ticket-toggle,
-.order-ticket-expand {
+.order-ticket-expand,
+.order-ticket-clear {
   flex-shrink: 0;
   padding: 0.38rem 0.7rem;
   font-size: 0.72rem;
+  text-decoration: none;
 }
 
 .order-ticket-actions {
@@ -1499,11 +1501,28 @@ body.has-order .wa-float {
   background: rgba(var(--gold-rgb), 0.18);
 }
 
+.order-ticket.is-collapsed .order-ticket-bar {
+  flex-wrap: nowrap;
+}
+
+.order-ticket.is-collapsed .order-ticket-expand {
+  display: none;
+}
+
 .order-ticket.is-collapsed .order-ticket-list,
 .order-ticket.is-collapsed .order-ticket-actions,
+.order-ticket.is-collapsed .order-ticket-clear-row,
 .order-ticket.is-collapsed .order-ticket-clear,
 .order-ticket.is-collapsed .order-ticket-wa {
   display: none;
+}
+
+.order-ticket.is-expanded:not(.is-collapsed) .order-ticket-bar .order-ticket-total {
+  display: none;
+}
+
+.order-ticket.is-expanded:not(.is-collapsed) .order-ticket-toggle {
+  margin-left: auto;
 }
 
 .order-ticket-pickup[aria-pressed="true"] {
@@ -1536,13 +1555,28 @@ body.has-order .wa-float {
   gap: 0.35rem;
 }
 
+.order-ticket-clear-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
 .order-ticket-clear {
-  align-self: flex-start;
-  padding: 0;
-  font-size: 0.78rem;
-  color: var(--ink-muted);
-  text-decoration: underline;
-  text-underline-offset: 0.18em;
+  text-decoration: none;
+}
+
+.order-ticket-foot-total {
+  display: none;
+  margin: 0 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--cayenne);
+}
+
+.order-ticket.is-expanded:not(.is-collapsed) .order-ticket-foot-total {
+  display: block;
 }
 
 .order-fly {

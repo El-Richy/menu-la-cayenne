@@ -1113,8 +1113,9 @@
       renderTicket();
     });
     actions.appendChild(pickupBtn);
-    ticket.appendChild(actions);
 
+    var clearRow = document.createElement("div");
+    clearRow.className = "order-ticket-clear-row";
     var clearBtn = document.createElement("button");
     clearBtn.type = "button";
     clearBtn.className = "order-ticket-clear";
@@ -1131,7 +1132,12 @@
       persist();
       paintOrder();
     });
-    ticket.appendChild(clearBtn);
+    clearRow.appendChild(clearBtn);
+    var footTotal = document.createElement("p");
+    footTotal.className = "order-ticket-foot-total";
+    clearRow.appendChild(footTotal);
+    ticket.appendChild(clearRow);
+    ticket.appendChild(actions);
 
     var link = document.createElement("a");
     link.className = "btn btn-primary order-ticket-wa";
@@ -1299,7 +1305,9 @@
       }
       var total = productTotal + extraTotal + (delivery ? DELIVERY_PRICE : 0);
       countEl.textContent = count === 1 ? "1 ítem" : count + " ítems";
-      totalEl.textContent = "Total: " + api.formatMoney(total);
+      var totalLabel = "Total: " + api.formatMoney(total);
+      totalEl.textContent = totalLabel;
+      footTotal.textContent = totalLabel;
       deliveryBtn.setAttribute("aria-pressed", delivery ? "true" : "false");
       deliveryBtn.textContent = delivery ? "Quitar domicilio" : "Domicilio · " + api.formatMoney(DELIVERY_PRICE);
       pickupBtn.setAttribute("aria-pressed", pickup ? "true" : "false");
