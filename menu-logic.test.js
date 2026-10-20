@@ -23,45 +23,51 @@ assert.deepEqual(status("Fri", "17:00"), {
   detail: "Hasta las 11:00 p.m."
 });
 
+assert.deepEqual(status("Mon", "13:15"), {
+  state: "closed",
+  label: "Abre en 2 h 15 min",
+  detail: "Abrimos hoy a las 3:30 p.m."
+});
+
 assert.deepEqual(status("Mon", "12:00"), {
   state: "closed",
-  label: "Cerrado",
+  label: "Abre en 3 h 30 min",
   detail: "Abrimos hoy a las 3:30 p.m."
 });
 
 assert.deepEqual(status("Fri", "16:00"), {
   state: "closed",
-  label: "Cerrado",
+  label: "Abre en 30 min",
   detail: "Abrimos hoy a las 4:30 p.m."
 });
 
 assert.deepEqual(status("Wed", "18:00"), {
   state: "closed",
-  label: "Hoy cerrado",
+  label: "Abre en 21 h 30 min",
   detail: "Abrimos mañana a las 3:30 p.m."
 });
 
 assert.deepEqual(status("Tue", "22:30"), {
   state: "closed",
-  label: "Cerrado",
+  label: "Abre en 41 h",
   detail: "Abrimos el jueves a las 3:30 p.m."
 });
 
 assert.deepEqual(status("Sun", "23:00"), {
   state: "closed",
-  label: "Cerrado",
+  label: "Abre en 16 h 30 min",
   detail: "Abrimos mañana a las 3:30 p.m."
 });
 
 assert.deepEqual(status("Mon", "22:00"), {
   state: "closed",
-  label: "Cerrado",
+  label: "Abre en 17 h 30 min",
   detail: "Abrimos mañana a las 3:30 p.m."
 });
 
 assert.deepEqual(api.statusAt(new Date("2026-01-07T23:00:00Z")), {
   state: "closed",
-  label: "Hoy cerrado",
+  label: "Abre en 21 h 30 min",
   detail: "Abrimos mañana a las 3:30 p.m."
 });
 
@@ -71,12 +77,39 @@ assert.equal(api.formatMoney(14000), "$14.000");
 assert.equal(api.formatMoney(7000), "$7.000");
 assert.equal(api.formatMoney(api.parsePrice("$20.000")), "$20.000");
 
+function cop(amount) {
+  return new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: "COP",
+    maximumFractionDigits: 0
+  }).format(amount);
+}
+
 assert.equal(
   api.buildMessage([
     { name: "Criolla", unit: 20000, qty: 2 },
     { name: "Papa francesa", unit: 7000, qty: 1 }
   ]),
-  "Hola, quiero pedir:\n\n2 × Criolla — $40.000\n1 × Papa francesa — $7.000\n\nTotal: $47.000"
+  "Hola, quiero pedir:\n\n2 × Criolla — $40.000\n1 × Papa francesa — $7.000\n\nTotal: " + cop(47000)
+);
+
+assert.equal(
+  api.buildMessage([
+    { name: "Criolla", unit: 20000, qty: 2, note: "sin cebolla" },
+    { name: "Papa francesa", unit: 7000, qty: 1 }
+  ]),
+  "Hola, quiero pedir:\n\n2 × Criolla — $40.000\n  sin cebolla\n1 × Papa francesa — $7.000\n\nTotal: " + cop(47000)
+);
+assert.equal(
+  api.buildMessage([{ name: "Criolla", unit: 20000, qty: 1, note: "punto de la carne" }]),
+  "Hola, quiero pedir:\n\n1 × Criolla — $20.000\n  punto de la carne\n\nTotal: " + cop(20000)
+);
+assert.equal(
+  api.buildMessage([
+    { name: "Criolla", unit: 20000, qty: 1, note: "   " },
+    { name: "Papa francesa", unit: 7000, qty: 1, note: "" }
+  ]),
+  "Hola, quiero pedir:\n\n1 × Criolla — $20.000\n1 × Papa francesa — $7.000\n\nTotal: " + cop(27000)
 );
 
 var whatsAppGreeting = "Hola, quiero hacer un pedido";
@@ -314,5 +347,62 @@ assert.equal(scriptJs.indexOf("t-tilt"), -1);
 assert.equal(stylesCss.indexOf("t-tilt"), -1);
 assert.equal(stylesCss.indexOf("--tilt-"), -1);
 assert.equal(stylesCss.indexOf("--tilt-rx"), -1);
+
+function cssRule(cssText, selector) {
+  var token = selector + " {";
+  var start = cssText.indexOf(token);
+  if (start === -1) return "";
+  var end = start + token.length - 1;
+  var depth = 0;
+  for (; end < cssText.length; end++) {
+    if (cssText[end] === "{") depth++;
+    else if (cssText[end] === "}") {
+      depth--;
+      if (depth === 0) {
+        end++;
+        break;
+      }
+    }
+  }
+  return cssText.slice(start, end);
+}
+
+var ticketRule = cssRule(stylesCss, ".order-ticket");
+assert.ok(ticketRule, "order ticket rule");
+assert.equal(/backdrop-filter/.test(ticketRule), false);
+assert.match(ticketRule, /ui-monospace/);
+assert.match(ticketRule, /Courier New/);
+assert.match(ticketRule, /#f4efe4/);
+assert.match(ticketRule, /mask-image:[\s\S]*radial-gradient/);
+var printFrames = cssKeyframeBlocks(stylesCss).filter(function (block) {
+  return block.name === "ticket-print";
+});
+assert.equal(printFrames.length, 1);
+assert.match(printFrames[0].text, /transform\s*:/);
+assert.match(printFrames[0].text, /opacity\s*:/);
+assert.equal(/background-position\s*:/.test(printFrames[0].text), false);
+assert.equal(/(^|[^A-Za-z-])filter\s*:/.test(printFrames[0].text), false);
+assert.match(stylesCss, /prefers-reduced-motion:\s*reduce[\s\S]*\.order-ticket-row\.is-printing[^{]*\{[^}]*animation:\s*none/);
+assert.equal(stylesCss.indexOf("@media print"), -1);
+
+var renderStart = scriptJs.indexOf("function renderTicket");
+var dishRows = scriptJs.slice(
+  scriptJs.indexOf("lines.forEach(function (line)", renderStart),
+  scriptJs.indexOf("extras.forEach(function (extra)", renderStart)
+);
+var extraRows = scriptJs.slice(
+  scriptJs.indexOf("extras.forEach(function (extra)", renderStart),
+  scriptJs.indexOf("var open = lines.length", renderStart)
+);
+assert.match(dishRows, /order-ticket-note/);
+assert.match(dishRows, /setAttribute\(\s*"maxlength",\s*"80"\s*\)/);
+assert.match(dishRows, /line\.note/);
+assert.equal(extraRows.indexOf("order-ticket-note"), -1);
+assert.equal(extraRows.indexOf("extra.note"), -1);
+assert.match(scriptJs, /stored\.note = line\.note\.slice\(0,\s*80\)/);
+assert.match(scriptJs, /restored\.note = item\.note\.slice\(0,\s*80\)/);
+assert.match(scriptJs, /note:\s*line\.note/);
+assert.match(scriptJs, /!reduceMotion\.matches[\s\S]{0,80}is-printing/);
+assert.equal(scriptJs.indexOf("extra.note"), -1);
 
 console.log("menu-logic tests passed");

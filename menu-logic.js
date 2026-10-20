@@ -49,6 +49,14 @@
     return h12 + ":" + mm + " " + suffix;
   }
 
+  function opensInLabel(deltaMinutes) {
+    var hours = Math.floor(deltaMinutes / 60);
+    var mins = deltaMinutes % 60;
+    if (hours > 0 && mins > 0) return "Abre en " + hours + " h " + mins + " min";
+    if (hours > 0) return "Abre en " + hours + " h";
+    return "Abre en " + mins + " min";
+  }
+
   function statusFromParts(parts) {
     var weekday = parts.weekday;
     var minutes = parts.minutes;
@@ -63,7 +71,7 @@
     if (today && minutes < today[0]) {
       return {
         state: "closed",
-        label: "Cerrado",
+        label: opensInLabel(today[0] - minutes),
         detail: "Abrimos hoy a las " + clockLabel(today[0])
       };
     }
@@ -76,9 +84,10 @@
     }
     var nextDay = DAYS[nextIdx];
     var openAt = clockLabel(OPEN[nextDay][0]);
+    var untilOpen = (24 * 60 - minutes) + (steps - 1) * 24 * 60 + OPEN[nextDay][0];
     return {
       state: "closed",
-      label: weekday === "Wed" ? "Hoy cerrado" : "Cerrado",
+      label: opensInLabel(untilOpen),
       detail: steps === 1
         ? "Abrimos mañana a las " + openAt
         : "Abrimos el " + DAY_ES[nextDay] + " a las " + openAt
@@ -113,6 +122,14 @@
     return "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(text);
   }
 
+  function copTotal(total) {
+    return new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
+      maximumFractionDigits: 0
+    }).format(total);
+  }
+
   function buildMessage(lines) {
     var rows = [];
     var total = 0;
@@ -122,8 +139,10 @@
       var lineTotal = line.unit * line.qty;
       total += lineTotal;
       rows.push(line.qty + " × " + line.name + " — " + formatMoney(lineTotal));
+      var note = line.note == null ? "" : String(line.note).trim();
+      if (note) rows.push("  " + note);
     }
-    return "Hola, quiero pedir:\n\n" + rows.join("\n") + "\n\nTotal: " + formatMoney(total);
+    return "Hola, quiero pedir:\n\n" + rows.join("\n") + "\n\nTotal: " + copTotal(total);
   }
 
   var ORDER_MAX_AGE_MS = 12 * 60 * 60 * 1000;

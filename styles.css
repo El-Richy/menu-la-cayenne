@@ -1481,14 +1481,27 @@ body.has-order .wa-float {
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
-  padding: 0.8rem 0.9rem 0.85rem;
-  border-radius: 16px;
-  background: rgba(246, 237, 217, 0.58);
-  backdrop-filter: blur(22px) saturate(1.35);
-  -webkit-backdrop-filter: blur(22px) saturate(1.35);
+  padding: 0.95rem 0.9rem 1rem;
+  border-radius: 0;
+  background: #f4efe4;
+  font-family: ui-monospace, "Courier New", monospace;
   color: var(--navy);
-  border: 1px solid rgba(255, 248, 230, 0.9);
-  box-shadow: 0 16px 40px rgba(12, 19, 34, 0.16);
+  border: 0;
+  box-shadow: 0 14px 28px rgba(12, 19, 34, 0.2);
+  -webkit-mask-image:
+    radial-gradient(circle at 8px 0, transparent 7px, #000 7.5px),
+    linear-gradient(#000, #000),
+    radial-gradient(circle at 8px 100%, transparent 7px, #000 7.5px);
+  -webkit-mask-size: 16px 12px, 100% calc(100% - 18px), 16px 12px;
+  -webkit-mask-position: top, center, bottom;
+  -webkit-mask-repeat: repeat-x, no-repeat, repeat-x;
+  mask-image:
+    radial-gradient(circle at 8px 0, transparent 7px, #000 7.5px),
+    linear-gradient(#000, #000),
+    radial-gradient(circle at 8px 100%, transparent 7px, #000 7.5px);
+  mask-size: 16px 12px, 100% calc(100% - 18px), 16px 12px;
+  mask-position: top, center, bottom;
+  mask-repeat: repeat-x, no-repeat, repeat-x;
   transform: translate(-50%, -10px) scale(0.98);
   opacity: 0;
   visibility: hidden;
@@ -1526,8 +1539,8 @@ body.has-order .wa-float {
 
 .order-ticket-title {
   margin: 0;
-  font-family: var(--font-display);
-  font-size: 1.28rem;
+  font-family: inherit;
+  font-size: 1.05rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   line-height: 1.1;
@@ -1636,6 +1649,35 @@ body.has-order .wa-float {
   gap: 0.45rem 0.6rem;
   align-items: center;
   font-size: 0.84rem;
+}
+
+.order-ticket-row.is-printing {
+  animation: ticket-print 380ms var(--ease);
+}
+
+@keyframes ticket-print {
+  from {
+    transform: translateY(-0.7rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.order-ticket-note {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0.15rem 0.1rem;
+  border: 0;
+  border-bottom: 1px dashed rgba(21, 32, 56, 0.35);
+  background: transparent;
+  color: var(--navy);
+  font: inherit;
 }
 
 .order-ticket-assign {
@@ -1981,6 +2023,7 @@ html:not(.js) .t-stagger-line {
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .halo { animation: none; }
+  .order-ticket-row.is-printing { animation: none; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;

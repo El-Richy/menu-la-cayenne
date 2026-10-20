@@ -403,6 +403,7 @@
     var burgerCatalog = {};
     var lineMeta = {};
     var assignOpenKey = "";
+    var printedRows = {};
     var STORAGE_KEY = "lacayenne-order-v3";
     var DELIVERY_PRICE = 6000;
 
@@ -521,6 +522,7 @@
             if (line.kind === "burger") stored.kind = "burger";
             if (line.group) stored.group = line.group;
             if (line.protein) stored.protein = line.protein;
+            if (typeof line.note === "string" && line.note) stored.note = line.note.slice(0, 80);
             return stored;
           }),
           extras: extras.map(function (extra) {
@@ -545,8 +547,10 @@
       var i;
       for (i = 0; i < lines.length; i++) {
         if (lines[i].name === name && lines[i].unit === unit) {
-          if (next === 0) lines.splice(i, 1);
-          else {
+          if (next === 0) {
+            lines.splice(i, 1);
+            delete printedRows[lineKey(name, unit)];
+          } else {
             lines[i].qty = next;
             var kept = lineMeta[lineKey(name, unit)] || {};
             if (kind === "burger" || kept.kind === "burger") lines[i].kind = "burger";
@@ -602,8 +606,10 @@
         if (extras[i].name === name && extras[i].unit === unit && (extras[i].hostKey || null) === key) {
           var current = extras[i].qty;
           var next = api.nextQty(current, delta);
-          if (next === 0) extras.splice(i, 1);
-          else extras[i].qty = next;
+          if (next === 0) {
+            extras.splice(i, 1);
+            delete printedRows[extraIdentity({ name: name, unit: unit, hostKey: key })];
+          } else extras[i].qty = next;
           if (delta > 0 && next > current && origin) flyToTicket(origin);
           persist();
           paintOrder();
@@ -981,6 +987,7 @@
         if (item.group) restored.group = item.group;
         if (item.protein === "salchicha" || item.protein === "chorizo") restored.protein = item.protein;
         else if (meta.protein) restored.protein = "chorizo";
+        if (typeof item.note === "string" && item.note) restored.note = item.note.slice(0, 80);
         lines.push(restored);
       });
       var storedExtras = Array.isArray(parsed.extras) ? parsed.extras : [];
@@ -1086,6 +1093,7 @@
       collapsed = false;
       ticketWasOpen = false;
       assignOpenKey = "";
+      printedRows = {};
       persist();
       paintOrder();
     });
@@ -1211,6 +1219,24 @@
         }, function (origin) {
           changeQty(line.name, line.unit, 1, line.kind, origin);
         });
+        var note = document.createElement("input");
+        note.type = "text";
+        note.className = "order-ticket-note";
+        note.setAttribute("maxlength", "80");
+        note.setAttribute("aria-label", "Nota para " + lineTitle(line));
+        note.placeholder = "Nota";
+        note.value = typeof line.note === "string" ? line.note : "";
+        note.addEventListener("input", function () {
+          line.note = note.value.slice(0, 80);
+          persist();
+          syncOrderLink();
+        });
+        row.appendChild(note);
+        var rowKey = lineKey(line.name, line.unit);
+        if (!printedRows[rowKey]) {
+          printedRows[rowKey] = true;
+          if (!reduceMotion.matches) row.classList.add("is-printing");
+        }
         list.appendChild(row);
         productTotal += line.unit * line.qty;
         count += line.qty;
@@ -1257,6 +1283,11 @@
           }
           row.appendChild(assign);
         }
+        var extraKey = extraIdentity(extra);
+        if (!printedRows[extraKey]) {
+          printedRows[extraKey] = true;
+          if (!reduceMotion.matches) row.classList.add("is-printing");
+        }
         list.appendChild(row);
         extraTotal += extra.unit * extra.qty;
         count += extra.qty;
@@ -1285,10 +1316,23 @@
       toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
       ticket.classList.toggle("is-collapsed", open && collapsed);
       ticket.classList.toggle("is-expanded", open && expanded);
+      syncOrderLink();
+      syncTicketOpen(open);
+      placeTicket();
+    }
+
+    function paintOrder() {
+      if (releaseOrphanExtras()) persist();
+      binders.forEach(function (paint) { paint(); });
+      renderTicket();
+    }
+
+    function syncOrderLink() {
+      var open = lines.length > 0 || extras.length > 0;
       var message = "";
       if (open) {
         var messageLines = lines.map(function (line) {
-          return { name: lineTitle(line), unit: line.unit, qty: line.qty };
+          return { name: lineTitle(line), unit: line.unit, qty: line.qty, note: line.note };
         });
         extras.forEach(function (extra) {
           messageLines.push({
@@ -1302,17 +1346,15 @@
         if (pickup) message += "\n\nPaso por el pedido.";
       }
       link.href = api.whatsAppHref(message);
-      syncTicketOpen(open);
-      placeTicket();
-    }
-
-    function paintOrder() {
-      if (releaseOrphanExtras()) persist();
-      binders.forEach(function (paint) { paint(); });
-      renderTicket();
     }
 
     restore();
+    lines.forEach(function (line) {
+      printedRows[lineKey(line.name, line.unit)] = true;
+    });
+    extras.forEach(function (extra) {
+      printedRows[extraIdentity(extra)] = true;
+    });
     paintOrder();
   }
 
