@@ -405,4 +405,22 @@ assert.match(scriptJs, /note:\s*line\.note/);
 assert.match(scriptJs, /!reduceMotion\.matches[\s\S]{0,80}is-printing/);
 assert.equal(scriptJs.indexOf("extra.note"), -1);
 
+var contactoStart = indexHtml.indexOf('<aside class="contacto-card">');
+var contactoEnd = indexHtml.indexOf("</aside>", contactoStart);
+var contactoCard = indexHtml.slice(contactoStart, contactoEnd);
+var mesaQr = "https://el-richy.github.io/menu-la-cayenne/";
+assert.match(contactoCard, /src="assets\/mesa-qr\.png"/);
+assert.match(contactoCard, /width="[0-9]+"/);
+assert.match(contactoCard, /height="[0-9]+"/);
+assert.match(contactoCard, /alt="Código QR de la carta\."/);
+assert.match(contactoCard, /Escanea para ver la carta\./);
+assert.ok(contactoCard.indexOf(mesaQr) !== -1);
+assert.equal(/qrserver|api\.qrserver|chart\.googleapis/.test(indexHtml), false);
+assert.equal(stylesCss.indexOf("@media print"), -1);
+var mesaQrBytes = fs.readFileSync(path.join(root, "assets", "mesa-qr.png"));
+assert.equal(mesaQrBytes[0], 0x89);
+assert.equal(mesaQrBytes[1], 0x50);
+assert.equal(mesaQrBytes[2], 0x4e);
+assert.equal(mesaQrBytes[3], 0x47);
+
 console.log("menu-logic tests passed");

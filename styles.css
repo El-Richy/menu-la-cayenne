@@ -1283,6 +1283,34 @@ body.has-order .hero {
   color: rgba(247, 243, 235, 0.8);
 }
 
+.mesa-qr {
+  margin: 1.35rem 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  text-align: center;
+}
+
+.mesa-qr a {
+  display: block;
+  line-height: 0;
+  background: #fff;
+  padding: 0.35rem;
+  border-radius: 8px;
+}
+
+.mesa-qr img {
+  width: 148px;
+  height: 148px;
+}
+
+.mesa-qr figcaption {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--cream);
+}
+
 .site-footer {
   position: relative;
   z-index: 1;

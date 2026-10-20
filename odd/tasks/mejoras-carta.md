@@ -48,11 +48,11 @@ Check: no tilt wrapper, tilt listeners, or tilt custom properties remain.
 - T2 S2 inline done — self-host latin woff2, drop Inter, close CSP — 84de13c
 - T3 S3 inline done — localStorage order with 12 h expiry — 84de13c
 - T4 S7 inline in_progress — Lighthouse mobile throttled, before
-- T5 S4 S5 S6 inline pending — halos, grain tile, hero srcset
-- T6 S12 inline pending — remove mouse card tilt
-- T7 S8 inline pending — thermal ticket identity
-- T8 S9 inline pending — dish notes and COP total in WhatsApp
-- T9 S10 inline pending — countdown instead of bare closed
+- T5 S4 S5 S6 inline done — halos, grain tile, hero srcset — 137986f
+- T6 S12 inline done — remove mouse card tilt — 137986f
+- T7 S8 inline done — thermal ticket identity — 9f167b7
+- T8 S9 inline done — dish notes and COP total in WhatsApp — 9f167b7
+- T9 S10 inline done — countdown instead of bare closed — 9f167b7
 - T10 S11 inline pending — table QR only, no printable menu
 - T11 S7 inline pending — Lighthouse mobile throttled, after
 
@@ -81,3 +81,7 @@ L2. 2026-10-20. Assumption: one table QR encodes https://el-richy.github.io/menu
 L3. 2026-10-20. T1–T3 verified with `node menu-logic.test.js` (passed) and committed as 84de13c. Pre-correction Lighthouse failed before any score: chrome-launcher required CHROME_PATH.
 
 L4. 2026-10-20. S7 before, mobile simulated throttling, Brave, snapshot of 84de13c: performance 0.90, FCP 1.2 s, LCP 3.6 s, TBT 30 ms, CLS 0.028, Speed Index 1.4 s, TTI 3.6 s. Artifact: /tmp/lh-menu-before.json.
+
+L5. 2026-10-20. Slice boundary: 84de13c is slice 1 (contrast, fonts, storage). 137986f is slice 2 (halos, grain, hero srcset, tilt). Later work stays in new commits. `node menu-logic.test.js` passed after slice 2. No dish img exists, so loading="lazy" was not applied.
+
+L6. 2026-10-20. Slice 3 is 9f167b7 (thermal ticket, dish notes, COP total, countdown). `node menu-logic.test.js` passed. Monday 13:15 labels `Abre en 2 h 15 min`. Note field limit is 80 characters.
