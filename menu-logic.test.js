@@ -228,4 +228,91 @@ faceBlocks.forEach(function (block) {
   assert.equal(bytes.subarray(0, 4).toString("ascii"), "wOF2");
 });
 
+assert.equal(stylesCss.indexOf("feTurbulence"), -1);
+assert.match(stylesCss, /url\(\s*["']assets\/grain\.webp["']\s*\)/);
+var grainBytes = fs.readFileSync(path.join(root, "assets", "grain.webp"));
+assert.equal(grainBytes.subarray(0, 4).toString("ascii"), "RIFF");
+assert.equal(grainBytes.subarray(8, 12).toString("ascii"), "WEBP");
+assert.ok(grainBytes.length > 0 && grainBytes.length < 8 * 1024, "grain.webp is " + grainBytes.length + " bytes");
+
+function cssKeyframeBlocks(cssText) {
+  var blocks = [];
+  var re = /@keyframes\s+([A-Za-z0-9_-]+)\s*\{/g;
+  var match;
+  while ((match = re.exec(cssText))) {
+    var end = re.lastIndex - 1;
+    var depth = 0;
+    for (; end < cssText.length; end++) {
+      if (cssText[end] === "{") depth++;
+      else if (cssText[end] === "}") {
+        depth--;
+        if (depth === 0) {
+          end++;
+          break;
+        }
+      }
+    }
+    blocks.push({ name: match[1], text: cssText.slice(match.index, end) });
+    re.lastIndex = end;
+  }
+  return blocks;
+}
+
+var haloFrames = cssKeyframeBlocks(stylesCss).filter(function (block) {
+  return /halo|drift-glow/.test(block.name);
+});
+assert.ok(haloFrames.length > 0, "halo keyframes missing");
+haloFrames.forEach(function (block) {
+  assert.equal(/background-position\s*:/.test(block.text), false, block.name);
+  assert.equal(/(^|[^A-Za-z-])filter\s*:/.test(block.text), false, block.name);
+});
+assert.match(stylesCss, /\.halos-static[^{]*\{[^}]*animation:\s*none/);
+assert.match(stylesCss, /prefers-reduced-motion:\s*reduce[\s\S]*\.halo[^{]*\{[^}]*animation:\s*none/);
+assert.match(scriptJs, /halos-static/);
+assert.match(scriptJs, /<\s*60/);
+
+function tagAttr(tag, name) {
+  var found = tag.match(new RegExp("\\b" + name + '="([^"]*)"'));
+  return found ? found[1] : "";
+}
+
+var heroImgTag = (indexHtml.match(/<img\b[^>]*>/g) || []).filter(function (tag) {
+  return tagAttr(tag, "class").split(/\s+/).indexOf("hero-img") !== -1;
+})[0];
+assert.ok(heroImgTag, "hero img");
+assert.equal(tagAttr(heroImgTag, "width"), "1600");
+assert.equal(tagAttr(heroImgTag, "height"), "1200");
+assert.match(tagAttr(heroImgTag, "srcset"), /\b640w\b/);
+assert.match(tagAttr(heroImgTag, "srcset"), /\b1280w\b/);
+assert.match(tagAttr(heroImgTag, "srcset"), /\b1600w\b/);
+assert.equal(tagAttr(heroImgTag, "sizes"), "100vw");
+assert.equal(tagAttr(heroImgTag, "loading"), "");
+var heroPicture = indexHtml.slice(indexHtml.indexOf("<picture>"), indexHtml.indexOf("</picture>") + "</picture>".length);
+var webpSource = (heroPicture.match(/<source\b[^>]*>/g) || []).filter(function (tag) {
+  return tagAttr(tag, "type") === "image/webp";
+})[0];
+assert.ok(webpSource, "webp source");
+["640w", "960w", "1280w", "1600w"].forEach(function (width) {
+  assert.ok(tagAttr(webpSource, "srcset").indexOf(width) !== -1, width);
+  assert.ok(tagAttr(heroImgTag, "srcset").indexOf(width) !== -1, width);
+});
+assert.equal(tagAttr(webpSource, "sizes"), "100vw");
+assert.equal(heroPicture.indexOf('loading="lazy"'), -1);
+
+var imagePreloads = (indexHtml.match(/<link\b[^>]*>/g) || []).filter(function (tag) {
+  return tagAttr(tag, "rel") === "preload" && tagAttr(tag, "as") === "image";
+});
+assert.equal(imagePreloads.length, 1);
+assert.equal(tagAttr(imagePreloads[0], "href"), "assets/hero-960.webp");
+
+["hero-640.webp", "hero-960.webp", "hero-1280.webp", "hero-640.jpg", "hero-960.jpg", "hero-1280.jpg"].forEach(function (file) {
+  var bytes = fs.readFileSync(path.join(root, "assets", file));
+  assert.ok(bytes.length > 0, file);
+});
+
+assert.equal(scriptJs.indexOf("t-tilt"), -1);
+assert.equal(stylesCss.indexOf("t-tilt"), -1);
+assert.equal(stylesCss.indexOf("--tilt-"), -1);
+assert.equal(stylesCss.indexOf("--tilt-rx"), -1);
+
 console.log("menu-logic tests passed");

@@ -31,7 +31,7 @@
   <link rel="preload" href="assets/fonts/great-vibes-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/cormorant-garamond-600.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="styles.css">
-  <link rel="preload" as="image" href="assets/hero.webp" type="image/webp" fetchpriority="high">
+  <link rel="preload" as="image" href="assets/hero-960.webp" type="image/webp" fetchpriority="high">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -63,6 +63,11 @@
   </script>
 </head>
 <body>
+  <div id="page-halos" aria-hidden="true">
+    <span class="halo halo-gold-top"></span>
+    <span class="halo halo-cayenne"></span>
+    <span class="halo halo-gold-side"></span>
+  </div>
   <div id="atmosphere" aria-hidden="true"></div>
   <a class="skip-link" href="#menu">Ir al menú</a>
 
@@ -90,8 +95,8 @@
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-bg" aria-hidden="true">
         <picture>
-          <source srcset="assets/hero.webp" type="image/webp">
-          <img class="hero-img" src="assets/hero.jpg" width="1600" height="1200" alt="" fetchpriority="high" decoding="async">
+          <source type="image/webp" srcset="assets/hero-640.webp 640w, assets/hero-960.webp 960w, assets/hero-1280.webp 1280w, assets/hero.webp 1600w" sizes="100vw">
+          <img class="hero-img" src="assets/hero.jpg" srcset="assets/hero-640.jpg 640w, assets/hero-960.jpg 960w, assets/hero-1280.jpg 1280w, assets/hero.jpg 1600w" sizes="100vw" width="1600" height="1200" alt="" fetchpriority="high" decoding="async">
         </picture>
         <div class="hero-overlay"></div>
       </div>

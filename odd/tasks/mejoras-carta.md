@@ -44,10 +44,10 @@ Check: no tilt wrapper, tilt listeners, or tilt custom properties remain.
 
 ## Tasks
 
-- T1 S1 inline pending — gold text becomes ink, cayenne, or cream on navy
-- T2 S2 inline pending — self-host latin woff2, drop Inter, close CSP
-- T3 S3 inline pending — localStorage order with 12 h expiry
-- T4 S7 inline pending — Lighthouse mobile throttled, before
+- T1 S1 inline done — gold text becomes ink, cayenne, or cream on navy — 84de13c
+- T2 S2 inline done — self-host latin woff2, drop Inter, close CSP — 84de13c
+- T3 S3 inline done — localStorage order with 12 h expiry — 84de13c
+- T4 S7 inline in_progress — Lighthouse mobile throttled, before
 - T5 S4 S5 S6 inline pending — halos, grain tile, hero srcset
 - T6 S12 inline pending — remove mouse card tilt
 - T7 S8 inline pending — thermal ticket identity
@@ -77,3 +77,7 @@ Qué recortaría: la inclinación de las tarjetas con mouse es un gimmick. El m�
 Orden sugerido: (1) contraste, fuentes locales y localStorage; (2) medir; (3) ticket comanda; (4) QR e impresión si el dueño lo quiere.. Lo de la carta imprimible no lo hagas, solo lo del QR
 
 L2. 2026-10-20. Assumption: one table QR encodes https://el-richy.github.io/menu-la-cayenne/ and sits in the contact card. No print stylesheet. Dish cards have no photographs, so S6 does not invent them. On navy, text that cannot be ink or cayenne uses cream because cayenne on #152038 is about 2.9:1.
+
+L3. 2026-10-20. T1–T3 verified with `node menu-logic.test.js` (passed) and committed as 84de13c. Pre-correction Lighthouse failed before any score: chrome-launcher required CHROME_PATH.
+
+L4. 2026-10-20. S7 before, mobile simulated throttling, Brave, snapshot of 84de13c: performance 0.90, FCP 1.2 s, LCP 3.6 s, TBT 30 ms, CLS 0.028, Speed Index 1.4 s, TTI 3.6 s. Artifact: /tmp/lh-menu-before.json.

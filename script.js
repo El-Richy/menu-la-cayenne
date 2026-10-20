@@ -2,7 +2,38 @@
   "use strict";
 
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  var finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+
+  function probeHaloFrames() {
+    if (document.hidden) {
+      document.addEventListener("visibilitychange", function waitVisible() {
+        if (document.hidden) return;
+        document.removeEventListener("visibilitychange", waitVisible);
+        probeHaloFrames();
+      });
+      return;
+    }
+    var frames = 0;
+    var start = 0;
+    function sample(now) {
+      if (document.hidden) {
+        document.addEventListener("visibilitychange", function resume() {
+          if (document.hidden) return;
+          document.removeEventListener("visibilitychange", resume);
+          probeHaloFrames();
+        });
+        return;
+      }
+      if (!start) start = now;
+      frames += 1;
+      if (now - start < 1000) {
+        requestAnimationFrame(sample);
+        return;
+      }
+      var fps = (frames * 1000) / (now - start);
+      if (fps < 60) document.documentElement.classList.add("halos-static");
+    }
+    requestAnimationFrame(sample);
+  }
 
   var yearEl = document.getElementById("year");
   if (yearEl) yearEl.textContent = String(new Date().getFullYear());
@@ -14,6 +45,7 @@
 
   if (!reduceMotion.matches) {
     document.documentElement.classList.add("motion");
+    probeHaloFrames();
   }
 
   function placeTicket() {
@@ -145,70 +177,6 @@
     });
     window.addEventListener("resize", function () {
       movePill(activeFilter(), false);
-    });
-  }
-
-  if (finePointer.matches && !reduceMotion.matches) {
-    document.querySelectorAll(".menu-card.featured, .menu-card:has(.badge-sold), .contacto-card").forEach(function (card) {
-      var wrap = document.createElement("div");
-      wrap.className = "t-tilt";
-      card.parentNode.insertBefore(wrap, card);
-      wrap.appendChild(card);
-      card.classList.add("t-tilt-card");
-
-      var glare = document.createElement("div");
-      glare.className = "t-tilt-glare";
-      glare.setAttribute("aria-hidden", "true");
-      card.appendChild(glare);
-
-      var MAX = 6;
-      var tiltFrame = 0;
-      var pendingX = 0;
-      var pendingY = 0;
-      var hasPending = false;
-
-      function reset() {
-        wrap.classList.remove("is-hover");
-        card.classList.remove("is-tilting");
-        card.style.setProperty("--tilt-rx", "0deg");
-        card.style.setProperty("--tilt-ry", "0deg");
-      }
-
-      function applyTilt(clientX, clientY) {
-        if (reduceMotion.matches) return;
-        var rect = wrap.getBoundingClientRect();
-        var px = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-        var py = Math.min(1, Math.max(0, (clientY - rect.top) / rect.height));
-        wrap.classList.add("is-hover");
-        card.classList.add("is-tilting");
-        card.style.setProperty("--tilt-ry", ((px - 0.5) * MAX).toFixed(2) + "deg");
-        card.style.setProperty("--tilt-rx", ((0.5 - py) * MAX).toFixed(2) + "deg");
-        card.style.setProperty("--tilt-gx", (px * 100).toFixed(1) + "%");
-        card.style.setProperty("--tilt-gy", (py * 100).toFixed(1) + "%");
-      }
-
-      function track(event) {
-        pendingX = event.clientX;
-        pendingY = event.clientY;
-        hasPending = true;
-        if (tiltFrame) return;
-        tiltFrame = requestAnimationFrame(function () {
-          tiltFrame = 0;
-          if (!hasPending) return;
-          hasPending = false;
-          applyTilt(pendingX, pendingY);
-        });
-      }
-
-      wrap.addEventListener("pointermove", track);
-      wrap.addEventListener("pointerleave", function (event) {
-        if (tiltFrame) {
-          cancelAnimationFrame(tiltFrame);
-          tiltFrame = 0;
-        }
-        hasPending = false;
-        if (event.pointerType === "mouse") reset();
-      });
     });
   }
 
