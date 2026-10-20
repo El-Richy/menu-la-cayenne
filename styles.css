@@ -1694,6 +1694,20 @@ body.has-order .wa-float {
   }
 }
 
+.order-ticket-note-btn {
+  margin-left: 0.45rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font-weight: 400;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  vertical-align: baseline;
+}
+
 .order-ticket-note {
   grid-column: 1 / -1;
   width: 100%;

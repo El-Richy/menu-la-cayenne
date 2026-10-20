@@ -394,9 +394,13 @@ var extraRows = scriptJs.slice(
   scriptJs.indexOf("extras.forEach(function (extra)", renderStart),
   scriptJs.indexOf("var open = lines.length", renderStart)
 );
+assert.match(dishRows, /order-ticket-note-btn/);
+assert.match(dishRows, /"Nota"/);
+assert.match(dishRows, /if \(showNote\)[\s\S]*appendChild\(note\)/);
 assert.match(dishRows, /order-ticket-note/);
 assert.match(dishRows, /setAttribute\(\s*"maxlength",\s*"80"\s*\)/);
 assert.match(dishRows, /line\.note/);
+assert.equal(extraRows.indexOf("order-ticket-note-btn"), -1);
 assert.equal(extraRows.indexOf("order-ticket-note"), -1);
 assert.equal(extraRows.indexOf("extra.note"), -1);
 assert.match(scriptJs, /stored\.note = line\.note\.slice\(0,\s*80\)/);

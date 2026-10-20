@@ -404,6 +404,8 @@
     var lineMeta = {};
     var assignOpenKey = "";
     var printedRows = {};
+    var noteOpen = {};
+    var noteFocusKey = "";
     var STORAGE_KEY = "lacayenne-order-v3";
     var DELIVERY_PRICE = 6000;
 
@@ -550,6 +552,7 @@
           if (next === 0) {
             lines.splice(i, 1);
             delete printedRows[lineKey(name, unit)];
+            delete noteOpen[lineKey(name, unit)];
           } else {
             lines[i].qty = next;
             var kept = lineMeta[lineKey(name, unit)] || {};
@@ -1094,6 +1097,8 @@
       ticketWasOpen = false;
       assignOpenKey = "";
       printedRows = {};
+      noteOpen = {};
+      noteFocusKey = "";
       persist();
       paintOrder();
     });
@@ -1197,6 +1202,21 @@
         var name = document.createElement("span");
         name.className = "order-ticket-name";
         name.textContent = lineTitle(line);
+        var rowKey = lineKey(line.name, line.unit);
+        var savedNote = typeof line.note === "string" ? line.note : "";
+        var showNote = !!noteOpen[rowKey] || savedNote.trim() !== "";
+        if (!showNote) {
+          name.appendChild(makeBtn(
+            "order-ticket-note-btn",
+            "Agregar nota para " + lineTitle(line),
+            "Nota",
+            function () {
+              noteOpen[rowKey] = true;
+              noteFocusKey = rowKey;
+              renderTicket();
+            }
+          ));
+        }
         if (line.protein) {
           name.appendChild(makeBtn(
             "order-ticket-protein",
@@ -1219,20 +1239,33 @@
         }, function (origin) {
           changeQty(line.name, line.unit, 1, line.kind, origin);
         });
-        var note = document.createElement("input");
-        note.type = "text";
-        note.className = "order-ticket-note";
-        note.setAttribute("maxlength", "80");
-        note.setAttribute("aria-label", "Nota para " + lineTitle(line));
-        note.placeholder = "Nota";
-        note.value = typeof line.note === "string" ? line.note : "";
-        note.addEventListener("input", function () {
-          line.note = note.value.slice(0, 80);
-          persist();
-          syncOrderLink();
-        });
-        row.appendChild(note);
-        var rowKey = lineKey(line.name, line.unit);
+        if (showNote) {
+          var note = document.createElement("input");
+          note.type = "text";
+          note.className = "order-ticket-note";
+          note.setAttribute("maxlength", "80");
+          note.setAttribute("aria-label", "Nota para " + lineTitle(line));
+          note.placeholder = "Nota";
+          note.value = savedNote;
+          note.addEventListener("input", function () {
+            line.note = note.value.slice(0, 80);
+            persist();
+            syncOrderLink();
+          });
+          note.addEventListener("blur", function () {
+            if (note.value.trim()) return;
+            noteOpen[rowKey] = false;
+            line.note = "";
+            persist();
+            syncOrderLink();
+            renderTicket();
+          });
+          row.appendChild(note);
+          if (noteFocusKey === rowKey) {
+            note.focus();
+            noteFocusKey = "";
+          }
+        }
         if (!printedRows[rowKey]) {
           printedRows[rowKey] = true;
           if (!reduceMotion.matches) row.classList.add("is-printing");
