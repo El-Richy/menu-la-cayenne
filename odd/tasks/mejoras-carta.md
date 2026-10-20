@@ -53,8 +53,8 @@ Check: no tilt wrapper, tilt listeners, or tilt custom properties remain.
 - T7 S8 inline done — thermal ticket identity — 9f167b7
 - T8 S9 inline done — dish notes and COP total in WhatsApp — 9f167b7
 - T9 S10 inline done — countdown instead of bare closed — 9f167b7
-- T10 S11 inline pending — table QR only, no printable menu
-- T11 S7 inline pending — Lighthouse mobile throttled, after
+- T10 S11 inline done — table QR only, no printable menu — 58c2d46
+- T11 S7 inline done — Lighthouse mobile throttled, after — recorded in L7
 
 ## Log
 
@@ -85,3 +85,5 @@ L4. 2026-10-20. S7 before, mobile simulated throttling, Brave, snapshot of 84de1
 L5. 2026-10-20. Slice boundary: 84de13c is slice 1 (contrast, fonts, storage). 137986f is slice 2 (halos, grain, hero srcset, tilt). Later work stays in new commits. `node menu-logic.test.js` passed after slice 2. No dish img exists, so loading="lazy" was not applied.
 
 L6. 2026-10-20. Slice 3 is 9f167b7 (thermal ticket, dish notes, COP total, countdown). `node menu-logic.test.js` passed. Monday 13:15 labels `Abre en 2 h 15 min`. Note field limit is 80 characters.
+
+L7. 2026-10-20. Slice 4 is 58c2d46 (table QR only). S7 after, same mobile simulated throttling and Brave, snapshot of the finished tree: performance 0.93, FCP 1.2 s, LCP 3.2 s, TBT 60 ms, CLS 0.028, Speed Index 1.6 s, TTI 3.3 s. Compared with L4, score, LCP and TTI improved; TBT and Speed Index got worse. The before run was already after local fonts, not the original Google-font page. Artifact: /tmp/lh-menu-after.json. Independent verifier passed S1–S6 and S8–S12. QR payload decoded to https://el-richy.github.io/menu-la-cayenne/. No browser fps run.
