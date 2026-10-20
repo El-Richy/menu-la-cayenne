@@ -420,7 +420,7 @@
 
   function initOrder() {
     var api = window.LaCayenne;
-    if (!api || typeof api.parsePrice !== "function" || typeof api.nextQty !== "function" || typeof api.drinkBases !== "function" || typeof api.buildMessage !== "function" || typeof api.whatsAppHref !== "function") return;
+    if (!api || typeof api.parsePrice !== "function" || typeof api.nextQty !== "function" || typeof api.drinkBases !== "function" || typeof api.buildMessage !== "function" || typeof api.whatsAppHref !== "function" || typeof api.packOrder !== "function" || typeof api.unpackOrder !== "function") return;
 
     var lines = [];
     var extras = [];
@@ -435,7 +435,7 @@
     var burgerCatalog = {};
     var lineMeta = {};
     var assignOpenKey = "";
-    var STORAGE_KEY = "lacayenne-order-v2";
+    var STORAGE_KEY = "lacayenne-order-v3";
     var DELIVERY_PRICE = 6000;
 
     function lineKey(name, unit) {
@@ -547,7 +547,7 @@
         pickup = false;
       }
       try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        localStorage.setItem(STORAGE_KEY, api.packOrder({
           lines: lines.map(function (line) {
             var stored = { name: line.name, unit: line.unit, qty: line.qty };
             if (line.kind === "burger") stored.kind = "burger";
@@ -565,7 +565,7 @@
           }),
           delivery: delivery,
           pickup: pickup
-        }));
+        }, Date.now()));
       } catch (err) {
         return;
       }
@@ -985,18 +985,20 @@
     function restore() {
       var raw;
       try {
-        raw = sessionStorage.getItem(STORAGE_KEY);
+        raw = localStorage.getItem(STORAGE_KEY);
       } catch (err) {
         return;
       }
-      if (!raw) return;
-      var parsed;
-      try {
-        parsed = JSON.parse(raw);
-      } catch (err) {
+      var parsed = api.unpackOrder(raw, Date.now());
+      if (!parsed) {
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch (err) {
+          return;
+        }
         return;
       }
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed) || !Array.isArray(parsed.lines)) return;
+      if (typeof parsed !== "object" || Array.isArray(parsed) || !Array.isArray(parsed.lines)) return;
       parsed.lines.forEach(function (item) {
         if (!item || typeof item.name !== "string") return;
         var unit = Number(item.unit);

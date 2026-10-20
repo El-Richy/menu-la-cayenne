@@ -126,6 +126,35 @@
     return "Hola, quiero pedir:\n\n" + rows.join("\n") + "\n\nTotal: " + formatMoney(total);
   }
 
+  var ORDER_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+
+  function packOrder(order, now) {
+    var source = order && typeof order === "object" ? order : {};
+    return JSON.stringify({
+      lines: source.lines,
+      extras: source.extras,
+      delivery: source.delivery,
+      pickup: source.pickup,
+      savedAt: now
+    });
+  }
+
+  function unpackOrder(stored, now) {
+    var parsed = stored;
+    if (typeof stored === "string") {
+      try {
+        parsed = JSON.parse(stored);
+      } catch (err) {
+        return null;
+      }
+    }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    if (typeof parsed.savedAt !== "number" || !isFinite(parsed.savedAt)) return null;
+    if (typeof now !== "number" || !isFinite(now)) return null;
+    if (now - parsed.savedAt >= ORDER_MAX_AGE_MS) return null;
+    return parsed;
+  }
+
   function nextQty(current, delta) {
     var n = Math.round(Number(current) + Number(delta));
     if (!isFinite(n) || n < 0) return 0;
@@ -164,6 +193,8 @@
     buildMessage: buildMessage,
     whatsAppHref: whatsAppHref,
     nextQty: nextQty,
-    drinkBases: drinkBases
+    drinkBases: drinkBases,
+    packOrder: packOrder,
+    unpackOrder: unpackOrder
   };
 });
